@@ -1,0 +1,530 @@
+:root {
+  --bg: #f7f2ed;
+  --surface: #ffffff;
+  --surface-strong: #f0e7dc;
+  --text: #2d1d0e;
+  --muted: #7a6a5b;
+  --primary: #b05f2e;
+  --primary-dark: #8b3d1c;
+  --success: #3d8a5e;
+  --border: #d3c4b5;
+
+  --menu-bg: #8b3d1c;
+  --menu-bg-dark: #6e2e12;
+  --menu-text: #fff;
+  --menu-muted: rgba(255,255,255,0.65);
+  --menu-hover: rgba(255,255,255,0.12);
+  --menu-active: rgba(255,255,255,0.22);
+  --menu-width: 240px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #f9f4ef;
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+button, input, select { font: inherit; }
+
+/* ── LAYOUT ── */
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--menu-width) 1fr;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════
+   MENU LATERAL
+══════════════════════════════ */
+.side-menu {
+  background: var(--menu-bg);
+  width: var(--menu-width);
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+/* Brand / Logo */
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px 20px;
+  background: var(--menu-bg-dark);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.brand img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.brand-text {
+  text-align: center;
+}
+
+.brand-text h1 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--menu-text);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.brand-text p {
+  margin: 4px 0 0;
+  color: var(--menu-muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+/* Nav */
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 20px;
+  gap: 2px;
+  flex: 1;
+}
+
+/* Botões diretos (Compras, Vendas, Inventário, Dashboard) */
+.side-nav > button[data-target] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--menu-text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.side-nav > button[data-target]:hover {
+  background: var(--menu-hover);
+}
+
+.side-nav > button[data-target].active {
+  background: var(--menu-active);
+  font-weight: 600;
+}
+
+/* Grupo expansível (Cadastro) */
+.side-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.side-nav-group > button.submenu-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--menu-text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.side-nav-group > button.submenu-toggle::after {
+  content: '›';
+  position: absolute;
+  right: 12px;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 0.2s;
+  color: var(--menu-muted);
+}
+
+.side-nav-group.active > button.submenu-toggle::after {
+  transform: rotate(90deg);
+}
+
+.side-nav-group > button.submenu-toggle:hover {
+  background: var(--menu-hover);
+}
+
+/* Submenu */
+.side-submenu {
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 0 4px 12px;
+}
+
+.side-nav-group.active .side-submenu {
+  display: flex;
+}
+
+.side-submenu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--menu-muted);
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.side-submenu button:hover {
+  background: var(--menu-hover);
+  color: var(--menu-text);
+}
+
+.side-submenu button.active {
+  background: var(--menu-active);
+  color: var(--menu-text);
+  font-weight: 600;
+}
+
+/* Separador de seção */
+.nav-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--menu-muted);
+  padding: 14px 12px 4px;
+}
+
+/* Ícones (emoji como ícone simples) */
+.nav-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════
+   CONTEÚDO PRINCIPAL
+══════════════════════════════ */
+.app-main {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.card-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  display: none;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.card-section.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-section h2 { margin-top: 0; font-size: 1.1rem; }
+
+.cadastro-panels { display: flex; flex-direction: column; gap: 24px; }
+.panel.hidden { display: none; }
+.panel { display: block; }
+
+/* Formulários */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-grid label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.form-actions { align-self: end; }
+
+/* Botões */
+.btn-primary {
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+
+.btn-secondary {
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.btn-secondary:hover { background: #ece1d6; }
+
+/* Ficha técnica — tabela de ingredientes compacta */
+#recipeIngredientsTable {
+  min-width: unset;
+  table-layout: fixed;
+  width: 100%;
+}
+
+#recipeIngredientsTable th,
+#recipeIngredientsTable td {
+  padding: 7px 6px;
+  vertical-align: middle;
+}
+
+#recipeIngredientsTable th:nth-child(1),
+#recipeIngredientsTable td:nth-child(1) { width: 150px; }  /* Ingrediente */
+
+#recipeIngredientsTable th:nth-child(2),
+#recipeIngredientsTable td:nth-child(2) { width: 130px; }  /* Marca */
+
+#recipeIngredientsTable th:nth-child(3),
+#recipeIngredientsTable td:nth-child(3) { width: 90px; }   /* Preço emb. */
+
+#recipeIngredientsTable th:nth-child(4),
+#recipeIngredientsTable td:nth-child(4) { width: 90px; }   /* Qtd emb. */
+
+#recipeIngredientsTable th:nth-child(5),
+#recipeIngredientsTable td:nth-child(5) { width: 90px; }   /* Qtd receita */
+
+#recipeIngredientsTable th:nth-child(6),
+#recipeIngredientsTable td:nth-child(6) { width: 80px; }   /* Custo */
+
+#recipeIngredientsTable th:nth-child(7),
+#recipeIngredientsTable td:nth-child(7) { width: 80px; }   /* Remover */
+
+#recipeIngredientsTable input,
+#recipeIngredientsTable select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+#recipeIngredientsTable .remove-ingredient-row {
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Ficha técnica */
+.recipe-card {
+  background: #fbf6f1;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.recipe-card h3 { margin-top: 0; font-size: 1rem; }
+
+.recipe-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 0 0;
+  flex-wrap: wrap;
+}
+
+.recipe-summary {
+  margin-top: 10px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.recipe-summary p { margin: 0; font-weight: 600; font-size: 0.9rem; }
+
+/* Tabelas */
+.list-card { overflow-x: auto; margin-bottom: 16px; }
+.list-card h3 { font-size: 0.95rem; margin-bottom: 12px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; min-width: 480px; }
+thead { background: #fbf6f1; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1e6db; }
+tbody tr:hover { background: #f9f4ef; }
+
+/* Dashboard */
+.dashboard-section .dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.dashboard-card {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+}
+.dashboard-card h3 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); }
+.dashboard-card p { margin: 0; font-size: 1.6rem; font-weight: 700; }
+.dashboard-charts { display: grid; gap: 20px; }
+
+/* Contagem de inventário */
+.inventory-count-input {
+  width: 110px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.inventory-count-inline {
+  width: 90px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #fff;
+  text-align: right;
+}
+.inventory-count-inline:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(176,95,46,0.15);
+}
+
+.saldo-negativo td { background: #fff0f0; color: #b00020; }
+.saldo-negativo td:last-child { font-weight: 700; }
+.history-summary-row td { font-weight: 600; }
+.history-actions { display: flex; gap: 8px; }
+.history-detail-row td { padding: 0 12px 16px; border-bottom: none; }
+.history-detail-table {
+  min-width: unset;
+  background: #fbf6f1;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.history-detail-table thead { background: #f0e7dc; }
+
+/* Gráfico mensal */
+.chart-card { width: 100%; }
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chart-header h3 { margin: 0; font-size: 0.95rem; }
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.chart-controls select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+#monthlySalesChart {
+  width: 100%;
+  display: block;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 20px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .side-menu { position: static; height: auto; min-height: unset; width: 100%; }
+  .brand { flex-direction: row; padding: 14px 16px; }
+  .brand img { width: 42px; height: 42px; }
+  .brand-text { text-align: left; }
+  .app-main { padding: 12px; }
+}

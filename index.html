@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brownie do KBBSA - Sistema de Controle</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side-menu">
+      <div class="brand">
+        <img src="Logo.png" alt="Logo Brownie do KBBSA" />
+        <div class="brand-text">
+          <h1>Brownie do KBBSA</h1>
+          <p>Sistema de controle de produtos, compras, vendas e inventário.</p>
+        </div>
+      </div>
+      <nav class="side-nav">
+        <button data-target="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
+        <div class="nav-section-label">Gestão</div>
+        <div class="side-nav-group">
+          <button data-target="produtos" class="submenu-toggle"><span class="nav-icon">📋</span> Cadastros</button>
+          <div class="side-submenu">
+            <button type="button" data-anchor="productPanel"><span class="nav-icon">🛍️</span> Produtos de Venda</button>
+            <button type="button" data-anchor="fichaPanel"><span class="nav-icon">📝</span> Ficha Técnica</button>
+            <button type="button" data-anchor="clientPanel"><span class="nav-icon">👥</span> Clientes</button>
+          </div>
+        </div>
+        <button data-target="compras"><span class="nav-icon">🛒</span> Compras de Insumos</button>
+        <button data-target="vendas"><span class="nav-icon">💰</span> Vendas</button>
+        <button data-target="inventario"><span class="nav-icon">📦</span> Inventário</button>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+    <section id="produtos" class="card-section">
+      <h2>Cadastro</h2>
+      <div class="cadastro-panels">
+        <div id="productPanel" class="panel active">
+          <div class="list-card">
+            <h3>Cadastro de Produtos de Venda e Insumos</h3>
+            <form id="productForm" class="form-grid">
+              <input id="productId" name="productId" type="hidden" />
+              <div>
+                <label for="productType">Tipo</label>
+                <select id="productType" name="productType" required>
+                  <option value="">Selecione o tipo</option>
+                  <option value="venda">Item de Venda</option>
+                  <option value="insumo">Insumos</option>
+                </select>
+              </div>
+              <div>
+                <label for="productName">Nome do produto</label>
+                <input id="productName" name="productName" type="text" required />
+              </div>
+              <div>
+                <label for="productSupplier">Fornecedor</label>
+                <input id="productSupplier" name="productSupplier" type="text" required />
+              </div>
+              <div>
+                <label for="productPackageQty">Quantidade da Embalagem</label>
+                <input id="productPackageQty" name="productPackageQty" type="number" step="1" min="1" required />
+              </div>
+              <div>
+                <label for="productUnit">Unidade de medida</label>
+                <select id="productUnit" name="productUnit" required>
+                  <option value="">Selecione a unidade</option>
+                  <option value="Grama">Grama</option>
+                  <option value="Kg">Kg</option>
+                  <option value="Unidade">Unidade</option>
+                  <option value="Porção">Porção</option>
+                </select>
+              </div>
+              <div>
+                <label for="productUnitPrice">Valor unitário (R$)</label>
+                <input id="productUnitPrice" name="productUnitPrice" type="number" step="0.01" min="0" required />
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">Salvar produto</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="list-card">
+            <h3>Produtos cadastrados</h3>
+            <table id="productsTable">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Produto</th>
+                  <th>Fornecedor</th>
+                  <th>Qtd embalagem</th>
+                  <th>Unidade</th>
+                  <th>Valor unit.</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="clientPanel" class="panel hidden">
+          <div class="list-card">
+            <h3>Cadastro de Clientes</h3>
+            <form id="clientForm" class="form-grid">
+              <input id="clientId" name="clientId" type="hidden" />
+              <div>
+                <label for="clientName">Nome do cliente</label>
+                <input id="clientName" name="clientName" type="text" required />
+              </div>
+              <div>
+                <label for="clientLocation">Local de venda</label>
+                <input id="clientLocation" name="clientLocation" type="text" required />
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">Salvar cliente</button>
+              </div>
+            </form>
+          </div>
+          <div class="list-card">
+            <h3>Clientes cadastrados</h3>
+            <table id="clientsTable">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Local de venda</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="fichaPanel" class="panel hidden">
+          <div class="recipe-card">
+            <h3>Ficha técnica</h3>
+            <form id="recipeForm" class="form-grid">
+              <div>
+                <label for="recipeProduct">Produto</label>
+                <select id="recipeProduct" name="recipeProduct" required>
+                  <option value="">Selecione um produto</option>
+                </select>
+              </div>
+              <div>
+                <label for="recipeTotalWeight">Peso total / volume</label>
+                <input id="recipeTotalWeight" name="recipeTotalWeight" type="text" placeholder="Ex: 1800g" />
+              </div>
+              <div>
+                <label for="recipeYield">Rendimento (unidades/fatias)</label>
+                <input id="recipeYield" name="recipeYield" type="number" step="1" min="1" required />
+              </div>
+              <div>
+                <label for="recipePrepTime">Tempo de preparo (minutos)</label>
+                <input id="recipePrepTime" name="recipePrepTime" type="number" step="1" min="0" />
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">Salvar ficha técnica</button>
+              </div>
+            </form>
+
+            <div class="recipe-ingredients" id="recipeIngredients">
+              <div class="recipe-controls">
+                <button type="button" id="addIngredientRow" class="btn-secondary">Adicionar ingrediente</button>
+                <button type="button" id="loadBaseRecipeBtn" class="btn-secondary">Carregar base: Brownie Tradicional 16 Fatias</button>
+              </div>
+              <div class="list-card">
+                <table id="recipeIngredientsTable">
+                  <thead>
+                    <tr>
+                      <th>Ingrediente</th>
+                      <th>Marca / embalagem</th>
+                      <th>Preço embalagem</th>
+                      <th>Qtd embalagem</th>
+                      <th>Qtd receita</th>
+                      <th>Custo ingrediente</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="recipe-summary">
+                <p><strong>Total de custo:</strong> <span id="recipeTotalCost">R$ 0,00</span></p>
+                <p><strong>Custo unitário por unidade:</strong> <span id="recipeUnitCost">R$ 0,00</span></p>
+              </div>
+              <div class="list-card">
+                <h3>Fichas técnicas cadastradas</h3>
+                <table id="recipeProductsTable">
+                  <thead>
+                    <tr>
+                      <th>Produto</th>
+                      <th>Custo unitário</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="compras" class="card-section">
+      <h2>Compras de insumos</h2>
+      <form id="purchaseForm" class="form-grid">
+        <div>
+          <label for="purchaseDate">Data</label>
+          <input id="purchaseDate" name="purchaseDate" type="date" required />
+        </div>
+        <div>
+          <label for="purchaseProduct">Insumo</label>
+          <select id="purchaseProduct" name="purchaseProduct" required></select>
+        </div>
+        <div>
+          <label for="purchaseQuantity">Quantidade</label>
+          <input id="purchaseQuantity" name="purchaseQuantity" type="number" step="1" min="1" required />
+        </div>
+        <div>
+          <label for="purchaseUnitValue">Valor unitário (R$)</label>
+          <input id="purchaseUnitValue" name="purchaseUnitValue" type="number" step="0.01" min="0" required />
+        </div>
+        <div>
+          <label for="purchaseLocation">Local da compra</label>
+          <input id="purchaseLocation" name="purchaseLocation" type="text" required />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Registrar compra</button>
+        </div>
+      </form>
+
+      <div class="list-card">
+        <h3>Compras registradas</h3>
+        <table id="purchasesTable">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Insumo</th>
+              <th>Qtd</th>
+              <th>Valor unit.</th>
+              <th>Total</th>
+              <th>Local</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="vendas" class="card-section">
+      <h2>Vendas de produto</h2>
+      <form id="salesForm" class="form-grid">
+        <div>
+          <label for="saleDate">Data</label>
+          <input id="saleDate" name="saleDate" type="date" required />
+        </div>
+        <div>
+          <label for="saleClient">Nome do cliente</label>
+          <select id="saleClient" name="saleClient" required>
+            <option value="">Selecione o cliente</option>
+          </select>
+        </div>
+        <div>
+          <label for="saleProduct">Produto</label>
+          <select id="saleProduct" name="saleProduct" required></select>
+        </div>
+        <div>
+          <label for="saleQuantity">Quantidade</label>
+          <input id="saleQuantity" name="saleQuantity" type="number" step="1" min="1" required />
+        </div>
+        <div>
+          <label for="saleUnitPrice">Valor unitário (R$)</label>
+          <input id="saleUnitPrice" name="saleUnitPrice" type="number" step="0.01" min="0" required />
+        </div>
+        <div>
+          <label for="saleTotal">Valor total (R$)</label>
+          <input id="saleTotal" name="saleTotal" type="number" step="0.01" min="0" readonly />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Registrar venda</button>
+        </div>
+      </form>
+
+      <div class="list-card">
+        <h3>Vendas registradas</h3>
+        <table id="salesTable">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Valor unit.</th>
+              <th>Total</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="inventario" class="card-section">
+      <h2>Inventário</h2>
+
+      <div class="list-card">
+        <div class="chart-header">
+          <h3>Contagem de estoque</h3>
+          <div class="chart-controls">
+            <label for="inventoryDate">Data da contagem</label>
+            <input id="inventoryDate" name="inventoryDate" type="date" />
+            <label for="inventoryTypeFilter">Tipo</label>
+            <select id="inventoryTypeFilter">
+              <option value="">Todos</option>
+              <option value="venda">Produto final</option>
+              <option value="insumo">Insumo</option>
+            </select>
+          </div>
+        </div>
+        <table id="inventoryCountTable">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Item</th>
+              <th>Unidade</th>
+              <th>Custo unit.</th>
+              <th>Quantidade</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="form-actions">
+          <button type="button" id="saveInventoryCountBtn" class="btn-primary">Salvar contagem</button>
+        </div>
+      </div>
+
+      <div class="list-card">
+        <h3>Estoque atual</h3>
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Tipo</th>
+              <th>Unidade</th>
+              <th>Última contagem</th>
+              <th>Compras</th>
+              <th>Total</th>
+              <th>Saldo</th>
+              <th>Valor (R$)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <div class="list-card">
+        <h3>Histórico de contagens</h3>
+        <table id="inventoryHistoryTable">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Contagem</th>
+              <th>Itens contados</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="dashboard" class="card-section dashboard-section">
+      <h2>Dashboard</h2>
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <h3>Total de vendas</h3>
+          <p id="dashboardSalesTotal">R$ 0,00</p>
+        </div>
+        <div class="dashboard-card">
+          <h3>Itens vendidos</h3>
+          <p id="dashboardSalesCount">0</p>
+        </div>
+        <div class="dashboard-card">
+          <h3>Total de compras</h3>
+          <p id="dashboardPurchaseTotal">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="dashboard-charts">
+        <div class="list-card chart-card">
+          <div class="chart-header">
+            <h3>Vendas mensais por cliente</h3>
+            <div class="chart-controls">
+              <label for="chartYear">Ano:</label>
+              <select id="chartYear"></select>
+            </div>
+          </div>
+          <canvas id="monthlySalesChart"></canvas>
+          <div id="chartLegend" class="chart-legend"></div>
+        </div>
+
+        <div class="list-card">
+          <h3>Vendas por produto</h3>
+          <table id="productSalesTable">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Quantidade vendida</th>
+                <th>Receita</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="list-card">
+          <h3>Vendas por cliente</h3>
+          <table id="clientSalesTable">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Quantidade</th>
+                <th>Total gasto</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Abra este arquivo em qualquer navegador para usar o sistema offline.</p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
+
