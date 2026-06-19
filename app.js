@@ -3,6 +3,52 @@ const CHART_COLORS = [
   '#2eb08a', '#b02e6d', '#2e4eb0', '#6db02e', '#b04a2e',
 ];
 
+const SUPABASE_URL = 'https://qykywggmsnbavpdpwxvs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v6madC5lhwPQUK6gZ_hE4g_FSPoOqjQ';
+let supabaseClient;
+
+function productToDb(p) {
+  return {
+    id: p.id,
+    type: p.type,
+    name: p.name,
+    supplier: p.supplier,
+    package_qty: p.packageQty,
+    unit: p.unit,
+    unit_price: p.unitPrice,
+    recipe: p.recipe || null,
+  };
+}
+
+function dbToProduct(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    supplier: row.supplier,
+    packageQty: row.package_qty,
+    unit: row.unit,
+    unitPrice: row.unit_price,
+    recipe: row.recipe || undefined,
+  };
+}
+
+async function loadProducts() {
+  const { data, error } = await supabaseClient.from('produtos').select('*');
+  if (error) { console.error('Erro ao carregar produtos:', error); return []; }
+  return (data || []).map(dbToProduct);
+}
+
+async function saveProductToDb(product) {
+  const { error } = await supabaseClient.from('produtos').upsert(productToDb(product));
+  if (error) { console.error('Erro ao salvar produto:', error); alert('Erro ao salvar produto no banco de dados.'); }
+}
+
+async function deleteProductFromDb(id) {
+  const { error } = await supabaseClient.from('produtos').delete().eq('id', id);
+  if (error) { console.error('Erro ao excluir produto:', error); alert('Erro ao excluir produto.'); }
+}
+
 const storageKeys = {
   products: 'brownie_products',
   purchases: 'brownie_purchases',
@@ -143,10 +189,16 @@ function renderProducts() {
       <td>${product.packageQty ?? '-'}</td>
       <td>${product.unit || '-'}</td>
       <td>${formatMoney(product.unitPrice)}</td>
-      <td><button type="button" class="btn-secondary edit-product-btn" data-id="${product.id}">Editar</button></td>
+      <td>
+        <button type="button" class="btn-secondary edit-product-btn" data-id="${product.id}">Editar</button>
+        <button type="button" class="btn-secondary delete-product-btn" data-id="${product.id}">Excluir</button>
+      </td>
     `;
     row.querySelector('.edit-product-btn').addEventListener('click', () => {
       startProductEdit(product.id);
+    });
+    row.querySelector('.delete-product-btn').addEventListener('click', () => {
+      deleteProduct(product.id);
     });
     elements.productsTable.appendChild(row);
   });
@@ -171,6 +223,13 @@ function renderRecipeProducts() {
       elements.recipeProductsTable.appendChild(row);
     }
   });
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Excluir este produto?')) return;
+  await deleteProductFromDb(id);
+  state.products = state.products.filter(p => p.id !== id);
+  renderAll();
 }
 
 function renderPurchases() {
@@ -657,7 +716,7 @@ function renderAll() {
   updateClientOptions();
 }
 
-function addProduct(event) {
+async function addProduct(event) {
   event.preventDefault();
   const productId = elements.productId.value || currentProductEditId;
   const productType = document.getElementById('productType').value;
@@ -678,9 +737,10 @@ function addProduct(event) {
       product.packageQty = packageQty;
       product.unit = unit;
       product.unitPrice = unitPrice;
+      await saveProductToDb(product);
     }
   } else {
-    state.products.push({
+    const newProduct = {
       id: crypto.randomUUID(),
       type: productType,
       name: productName,
@@ -688,9 +748,10 @@ function addProduct(event) {
       packageQty,
       unit,
       unitPrice,
-    });
+    };
+    state.products.push(newProduct);
+    await saveProductToDb(newProduct);
   }
-  saveData(storageKeys.products, state.products);
   resetProductForm();
   renderAll();
 }
@@ -735,6 +796,12 @@ function createIngredientRow() {
   const select = row.querySelector('.ingredient-name');
   populateIngredientOptions(row);
   select.addEventListener('change', () => {
+    const product = state.products.find(p => p.name === select.value);
+    if (product) {
+      row.querySelector('.ingredient-package-price').value = product.unitPrice || '';
+      row.querySelector('.ingredient-package-qty').value = product.packageQty || '';
+      updateRowCost(row);
+    }
     updateRecipeTotals();
   });
 
@@ -864,7 +931,7 @@ function copyBaseRecipeToForm(baseProduct) {
   return true;
 }
 
-function addRecipeProduct(event) {
+async function addRecipeProduct(event) {
   event.preventDefault();
   const productId = elements.recipeProduct.value;
   const totalWeight = document.getElementById('recipeTotalWeight').value.trim();
@@ -919,7 +986,7 @@ function addRecipeProduct(event) {
     ingredients,
   };
 
-  saveData(storageKeys.products, state.products);
+  await saveProductToDb(product);
   alert('Ficha técnica salva com sucesso!');
   
   // Hide recipe ingredients section
@@ -1123,8 +1190,42 @@ function handleRecipeProductChange() {
   }
 }
 
-function initialize() {
-  state.products = loadData(storageKeys.products);
+function showLogin() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appContent').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+  const btn = event.target.querySelector('button[type="submit"]');
+  errorEl.textContent = '';
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  btn.textContent = 'Entrar';
+  btn.disabled = false;
+  if (error) { errorEl.textContent = 'E-mail ou senha incorretos.'; return; }
+  showApp();
+  await initialize();
+}
+
+async function handleLogout() {
+  await supabaseClient.auth.signOut();
+  showLogin();
+}
+
+let appInitialized = false;
+
+async function initialize() {
+  state.products = await loadProducts();
   state.purchases = loadData(storageKeys.purchases);
   state.sales = loadData(storageKeys.sales);
   state.inventory = loadData(storageKeys.inventory);
@@ -1132,67 +1233,75 @@ function initialize() {
   state.inventoryHistory = loadData(storageKeys.inventoryHistory);
   state.clients = loadData(storageKeys.clients);
 
-  elements.productForm.addEventListener('submit', addProduct);
-  elements.recipeForm.addEventListener('submit', addRecipeProduct);
-  elements.recipeProduct.addEventListener('change', handleRecipeProductChange);
-  elements.purchaseForm.addEventListener('submit', addPurchase);
-  elements.salesForm.addEventListener('submit', addSale);
-  if (elements.clientForm) {
-    elements.clientForm.addEventListener('submit', addClient);
-  }
-  if (elements.saveInventoryCountBtn) {
-    elements.saveInventoryCountBtn.addEventListener('click', saveInventoryCount);
-  }
-  if (elements.inventoryTypeFilter) {
-    elements.inventoryTypeFilter.addEventListener('change', () => {
-      renderInventoryCountTable();
-      renderInventory();
-    });
-  }
-  elements.saleQuantity.addEventListener('input', updateSaleTotal);
-  elements.saleUnitPrice.addEventListener('input', updateSaleTotal);
-  elements.addIngredientRow.addEventListener('click', () => {
-    elements.recipeIngredientsTable.appendChild(createIngredientRow());
-  });
-  if (elements.chartYear) {
-    elements.chartYear.addEventListener('change', () => drawMonthlySalesChart());
-  }
-  window.addEventListener('resize', () => {
-    if (document.getElementById('dashboard')?.classList.contains('active')) {
-      drawMonthlySalesChart();
+  if (!appInitialized) {
+    elements.productForm.addEventListener('submit', addProduct);
+    elements.recipeForm.addEventListener('submit', addRecipeProduct);
+    elements.recipeProduct.addEventListener('change', handleRecipeProductChange);
+    elements.purchaseForm.addEventListener('submit', addPurchase);
+    elements.salesForm.addEventListener('submit', addSale);
+    if (elements.clientForm) {
+      elements.clientForm.addEventListener('submit', addClient);
     }
-  });
-  if (elements.loadBaseRecipeBtn) {
-    elements.loadBaseRecipeBtn.addEventListener('click', () => {
-      const baseName = 'Brownie Tradicional 16 Fatias';
-      const baseProduct = state.products.find(p => p.name === baseName);
-      if (!baseProduct) {
-        alert('Produto base "' + baseName + '" não encontrado. Cadastre-o em Produtos primeiro.');
-        return;
-      }
-      const copied = copyBaseRecipeToForm(baseProduct);
-      if (!copied) alert('Produto base não possui ficha técnica com ingredientes.');
+    if (elements.saveInventoryCountBtn) {
+      elements.saveInventoryCountBtn.addEventListener('click', saveInventoryCount);
+    }
+    if (elements.inventoryTypeFilter) {
+      elements.inventoryTypeFilter.addEventListener('change', () => {
+        renderInventoryCountTable();
+        renderInventory();
+      });
+    }
+    elements.saleQuantity.addEventListener('input', updateSaleTotal);
+    elements.saleUnitPrice.addEventListener('input', updateSaleTotal);
+    elements.addIngredientRow.addEventListener('click', () => {
+      elements.recipeIngredientsTable.appendChild(createIngredientRow());
     });
+    if (elements.chartYear) {
+      elements.chartYear.addEventListener('change', () => drawMonthlySalesChart());
+    }
+    window.addEventListener('resize', () => {
+      if (document.getElementById('dashboard')?.classList.contains('active')) {
+        drawMonthlySalesChart();
+      }
+    });
+    if (elements.loadBaseRecipeBtn) {
+      elements.loadBaseRecipeBtn.addEventListener('click', () => {
+        const baseName = 'Brownie Tradicional 16 Fatias';
+        const baseProduct = state.products.find(p => p.name === baseName);
+        if (!baseProduct) {
+          alert('Produto base "' + baseName + '" não encontrado. Cadastre-o em Produtos primeiro.');
+          return;
+        }
+        const copied = copyBaseRecipeToForm(baseProduct);
+        if (!copied) alert('Produto base não possui ficha técnica com ingredientes.');
+      });
+    }
+    const recipeYieldInput = document.getElementById('recipeYield');
+    if (recipeYieldInput) {
+      recipeYieldInput.addEventListener('input', updateRecipeTotals);
+    }
+    elements.recipeIngredientsTable.appendChild(createIngredientRow());
+    if (elements.inventoryDate) {
+      elements.inventoryDate.valueAsDate = new Date();
+    }
+    const firstSection = document.getElementById('produtos');
+    if (firstSection) firstSection.classList.add('active');
+    initNavigation();
+    appInitialized = true;
   }
-  const recipeYieldInput = document.getElementById('recipeYield');
-  if (recipeYieldInput) {
-    recipeYieldInput.addEventListener('input', updateRecipeTotals);
-  }
-  elements.recipeIngredientsTable.appendChild(createIngredientRow());
 
-  // Set today's date as default for inventory
-  if (elements.inventoryDate) {
-    elements.inventoryDate.valueAsDate = new Date();
-  }
-  
-  // Show first section by default (produtos)
-  const firstSection = document.getElementById('produtos');
-  if (firstSection) {
-    firstSection.classList.add('active');
-  }
-
-  initNavigation();
   renderAll();
 }
 
-initialize();
+(async () => {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    showApp();
+    await initialize();
+  } else {
+    showLogin();
+  }
+})();
