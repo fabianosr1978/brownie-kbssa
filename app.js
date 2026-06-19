@@ -1266,7 +1266,7 @@ async function initialize() {
     });
     if (elements.loadBaseRecipeBtn) {
       elements.loadBaseRecipeBtn.addEventListener('click', () => {
-        const baseName = 'Brownie Tradicional 16 Fatias';
+        const baseName = 'Brownie Doce de Leite 90g';
         const baseProduct = state.products.find(p => p.name === baseName);
         if (!baseProduct) {
           alert('Produto base "' + baseName + '" não encontrado. Cadastre-o em Produtos primeiro.');
