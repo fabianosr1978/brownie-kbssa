@@ -796,6 +796,12 @@ function createIngredientRow() {
   const select = row.querySelector('.ingredient-name');
   populateIngredientOptions(row);
   select.addEventListener('change', () => {
+    const product = state.products.find(p => p.name === select.value);
+    if (product) {
+      row.querySelector('.ingredient-package-price').value = product.unitPrice ?? '';
+      row.querySelector('.ingredient-package-qty').value = product.packageQty ?? '';
+      updateRowCost(row);
+    }
     updateRecipeTotals();
   });
 
