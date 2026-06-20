@@ -17,6 +17,7 @@ function productToDb(p) {
     unit: p.unit,
     unit_price: p.unitPrice,
     recipe: p.recipe || null,
+    barcode: p.barcode || null,
   };
 }
 
@@ -30,6 +31,7 @@ function dbToProduct(row) {
     unit: row.unit,
     unitPrice: row.unit_price,
     recipe: row.recipe || undefined,
+    barcode: row.barcode || undefined,
   };
 }
 
@@ -97,6 +99,7 @@ const elements = {
   inventoryTypeFilter: document.getElementById('inventoryTypeFilter'),
   saveInventoryCountBtn: document.getElementById('saveInventoryCountBtn'),
   purchaseProduct: document.getElementById('purchaseProduct'),
+  purchaseUnitValue: document.getElementById('purchaseUnitValue'),
   saleProduct: document.getElementById('saleProduct'),
   saleQuantity: document.getElementById('saleQuantity'),
   saleUnitPrice: document.getElementById('saleUnitPrice'),
@@ -742,6 +745,7 @@ async function addProduct(event) {
   const packageQty = Number(document.getElementById('productPackageQty').value);
   const unit = document.getElementById('productUnit').value;
   const unitPrice = Number(document.getElementById('productUnitPrice').value);
+  const barcode = (document.getElementById('productBarcode')?.value || '').trim() || undefined;
 
   if (!productType || !productName || !supplier || !packageQty || !unit || !unitPrice) return;
 
@@ -754,6 +758,7 @@ async function addProduct(event) {
       product.packageQty = packageQty;
       product.unit = unit;
       product.unitPrice = unitPrice;
+      product.barcode = barcode;
       await saveProductToDb(product);
     }
   } else {
@@ -765,6 +770,7 @@ async function addProduct(event) {
       packageQty,
       unit,
       unitPrice,
+      barcode,
     };
     state.products.push(newProduct);
     await saveProductToDb(newProduct);
@@ -784,6 +790,8 @@ function startProductEdit(productId) {
   document.getElementById('productPackageQty').value = product.packageQty || '';
   document.getElementById('productUnit').value = product.unit || '';
   document.getElementById('productUnitPrice').value = product.unitPrice || '';
+  const barcodeField = document.getElementById('productBarcode');
+  if (barcodeField) barcodeField.value = product.barcode || '';
   document.querySelector('#productForm .btn-primary').textContent = 'Atualizar produto';
 }
 
@@ -1207,6 +1215,105 @@ function handleRecipeProductChange() {
   }
 }
 
+// ── LEITOR DE CÓDIGO DE BARRAS ────────────────────────────
+let html5QrCode = null;
+
+function handleBarcodeDetected(barcode) {
+  const code = barcode.trim();
+  const product = state.products.find(p => p.barcode === code);
+  const resultEl = document.getElementById('scanResult');
+  if (!resultEl) return;
+  resultEl.style.display = 'block';
+
+  if (product) {
+    elements.purchaseProduct.value = product.id;
+    elements.purchaseUnitValue.value = product.unitPrice || '';
+    resultEl.className = 'scan-result scan-ok';
+    resultEl.innerHTML = `✓ <strong>${product.name}</strong> encontrado — selecione a quantidade e confirme.`;
+    document.getElementById('purchaseQuantity').focus();
+  } else {
+    resultEl.className = 'scan-result scan-error';
+    resultEl.innerHTML = `Código <strong>${code}</strong> não cadastrado. <a href="#" onclick="goToProductsWithBarcode('${code}');return false;">Cadastrar produto com este código</a>`;
+  }
+
+  const barcodeInput = document.getElementById('barcodeInput');
+  if (barcodeInput) barcodeInput.value = '';
+}
+
+function goToProductsWithBarcode(barcode) {
+  document.querySelectorAll('.card-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('produtos').classList.add('active');
+  document.querySelectorAll('.side-nav button').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-target="produtos"]')?.classList.add('active');
+  const barcodeField = document.getElementById('productBarcode');
+  if (barcodeField) { barcodeField.value = barcode; barcodeField.focus(); }
+}
+
+function startCameraScan() {
+  const container = document.getElementById('scannerContainer');
+  if (!container) return;
+  container.style.display = 'block';
+
+  if (html5QrCode) return;
+  html5QrCode = new Html5Qrcode('barcodeReader');
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 280, height: 120 } },
+    (decodedText) => {
+      handleBarcodeDetected(decodedText);
+      stopCameraScan();
+    },
+    () => {}
+  ).catch(err => {
+    const resultEl = document.getElementById('scanResult');
+    if (resultEl) {
+      resultEl.style.display = 'block';
+      resultEl.className = 'scan-result scan-error';
+      resultEl.textContent = 'Não foi possível acessar a câmera. Use um leitor USB ou permita o acesso à câmera.';
+    }
+    stopCameraScan();
+    console.warn('Câmera:', err);
+  });
+}
+
+function stopCameraScan() {
+  const container = document.getElementById('scannerContainer');
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      html5QrCode = null;
+      if (container) container.style.display = 'none';
+    }).catch(() => {
+      html5QrCode = null;
+      if (container) container.style.display = 'none';
+    });
+  } else {
+    if (container) container.style.display = 'none';
+  }
+}
+
+function initBarcodeScanner() {
+  const barcodeInput = document.getElementById('barcodeInput');
+  const cameraScanBtn = document.getElementById('cameraScanBtn');
+  const stopScanBtn = document.getElementById('stopScanBtn');
+
+  if (barcodeInput) {
+    barcodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const code = barcodeInput.value.trim();
+        if (code) handleBarcodeDetected(code);
+      }
+    });
+  }
+  if (cameraScanBtn) {
+    cameraScanBtn.addEventListener('click', startCameraScan);
+  }
+  if (stopScanBtn) {
+    stopScanBtn.addEventListener('click', stopCameraScan);
+  }
+}
+
 // ── CUSTOS & DRE ──────────────────────────────────────────
 const COST_LABELS = {
   fixo: 'Custo Fixo',
@@ -1483,6 +1590,7 @@ async function initialize() {
     if (elements.inventoryDate) {
       elements.inventoryDate.valueAsDate = new Date();
     }
+    initBarcodeScanner();
     if (elements.costForm) {
       elements.costForm.addEventListener('submit', addCost);
     }
