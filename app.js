@@ -51,6 +51,77 @@ async function deleteProductFromDb(id) {
   if (error) { console.error('Erro ao excluir produto:', error); alert('Erro ao excluir produto.'); }
 }
 
+// ── COMPRAS ──
+async function loadPurchases() {
+  const { data, error } = await supabaseClient.from('compras').select('*').order('date', { ascending: false });
+  if (error) { console.error('Erro compras:', error); return []; }
+  return (data || []).map(r => ({ id: r.id, date: r.date, productId: r.product_id, quantity: r.quantity, unitValue: r.unit_value, location: r.location }));
+}
+async function savePurchaseToDb(p) {
+  const { error } = await supabaseClient.from('compras').upsert({ id: p.id, date: p.date, product_id: p.productId, quantity: p.quantity, unit_value: p.unitValue, location: p.location });
+  if (error) console.error('Erro salvar compra:', error);
+}
+async function deletePurchaseFromDb(id) {
+  const { error } = await supabaseClient.from('compras').delete().eq('id', id);
+  if (error) console.error('Erro excluir compra:', error);
+}
+
+// ── VENDAS ──
+async function loadSales() {
+  const { data, error } = await supabaseClient.from('vendas').select('*').order('date', { ascending: false });
+  if (error) { console.error('Erro vendas:', error); return []; }
+  return (data || []).map(r => ({ id: r.id, date: r.date, productId: r.product_id, client: r.client, quantity: r.quantity, unitPrice: r.unit_price, total: r.total }));
+}
+async function saveSaleToDb(s) {
+  const { error } = await supabaseClient.from('vendas').upsert({ id: s.id, date: s.date, product_id: s.productId, client: s.client, quantity: s.quantity, unit_price: s.unitPrice, total: s.total });
+  if (error) console.error('Erro salvar venda:', error);
+}
+async function deleteSaleFromDb(id) {
+  const { error } = await supabaseClient.from('vendas').delete().eq('id', id);
+  if (error) console.error('Erro excluir venda:', error);
+}
+
+// ── CLIENTES ──
+async function loadClients() {
+  const { data, error } = await supabaseClient.from('clientes').select('*').order('name');
+  if (error) { console.error('Erro clientes:', error); return []; }
+  return (data || []).map(r => ({ id: r.id, name: r.name, location: r.location }));
+}
+async function saveClientToDb(c) {
+  const { error } = await supabaseClient.from('clientes').upsert({ id: c.id, name: c.name, location: c.location });
+  if (error) console.error('Erro salvar cliente:', error);
+}
+async function deleteClientFromDb(id) {
+  const { error } = await supabaseClient.from('clientes').delete().eq('id', id);
+  if (error) console.error('Erro excluir cliente:', error);
+}
+
+// ── CUSTOS ──
+async function loadCostsFromDb() {
+  const { data, error } = await supabaseClient.from('custos').select('*');
+  if (error) { console.error('Erro custos:', error); return []; }
+  return (data || []).map(r => ({ id: r.id, name: r.name, category: r.category, value: r.value, month: r.month, year: r.year }));
+}
+async function saveCostToDb(c) {
+  const { error } = await supabaseClient.from('custos').upsert({ id: c.id, name: c.name, category: c.category, value: c.value, month: c.month, year: c.year });
+  if (error) console.error('Erro salvar custo:', error);
+}
+async function deleteCostFromDb(id) {
+  const { error } = await supabaseClient.from('custos').delete().eq('id', id);
+  if (error) console.error('Erro excluir custo:', error);
+}
+
+// ── INVENTÁRIO HISTÓRICO ──
+async function loadInventoryHistory() {
+  const { data, error } = await supabaseClient.from('inventario_historico').select('*').order('date');
+  if (error) { console.error('Erro inventário:', error); return []; }
+  return (data || []).map(r => ({ id: r.id, date: r.date, type: r.type, itemId: r.item_id, itemName: r.item_name, quantity: r.quantity, source: r.source }));
+}
+async function saveInventoryEntryToDb(entry) {
+  const { error } = await supabaseClient.from('inventario_historico').upsert({ id: entry.id, date: entry.date, type: entry.type, item_id: entry.itemId || null, item_name: entry.itemName || null, quantity: entry.quantity, source: entry.source });
+  if (error) console.error('Erro salvar inventário:', error);
+}
+
 const storageKeys = {
   products: 'brownie_products',
   purchases: 'brownie_purchases',
@@ -269,9 +340,9 @@ function renderPurchases() {
   });
 }
 
-function deletePurchase(id) {
+async function deletePurchase(id) {
   state.purchases = state.purchases.filter(purchase => purchase.id !== id);
-  saveData(storageKeys.purchases, state.purchases);
+  await deletePurchaseFromDb(id);
   renderAll();
 }
 
@@ -296,9 +367,9 @@ function renderSales() {
   });
 }
 
-function deleteSale(saleId) {
+async function deleteSale(saleId) {
   state.sales = state.sales.filter(sale => sale.id !== saleId);
-  saveData(storageKeys.sales, state.sales);
+  await deleteSaleFromDb(saleId);
   renderAll();
 }
 
@@ -358,12 +429,12 @@ function renderInventory() {
     `;
 
     const input = row.querySelector('.inventory-count-inline');
-    input.addEventListener('change', () => {
+    input.addEventListener('change', async () => {
       const newQty = Number(input.value);
       if (input.value === '' || isNaN(newQty) || newQty < 0) return;
       const today = new Date().toISOString().split('T')[0];
       const type = product.type === 'venda' ? 'product' : 'ingredient';
-      state.inventoryHistory.push({
+      const entry = {
         id: crypto.randomUUID(),
         date: today,
         type,
@@ -371,8 +442,9 @@ function renderInventory() {
         itemName: type === 'ingredient' ? product.name : undefined,
         quantity: newQty,
         source: 'count',
-      });
-      saveData(storageKeys.inventoryHistory, state.inventoryHistory);
+      };
+      state.inventoryHistory.push(entry);
+      await saveInventoryEntryToDb(entry);
       renderAll();
     });
 
@@ -695,7 +767,7 @@ function updateClientOptions() {
   elements.saleClient.value = current;
 }
 
-function addClient(event) {
+async function addClient(event) {
   event.preventDefault();
   const id = document.getElementById('clientId').value;
   const name = document.getElementById('clientName').value.trim();
@@ -704,19 +776,20 @@ function addClient(event) {
 
   if (id) {
     const existing = state.clients.find(c => c.id === id);
-    if (existing) { existing.name = name; existing.location = location; }
+    if (existing) { existing.name = name; existing.location = location; await saveClientToDb(existing); }
   } else {
-    state.clients.push({ id: crypto.randomUUID(), name, location });
+    const client = { id: crypto.randomUUID(), name, location };
+    state.clients.push(client);
+    await saveClientToDb(client);
   }
-  saveData(storageKeys.clients, state.clients);
   event.target.reset();
   document.getElementById('clientId').value = '';
   renderAll();
 }
 
-function deleteClient(id) {
+async function deleteClient(id) {
   state.clients = state.clients.filter(c => c.id !== id);
-  saveData(storageKeys.clients, state.clients);
+  await deleteClientFromDb(id);
   renderAll();
 }
 
@@ -1021,7 +1094,7 @@ async function addRecipeProduct(event) {
   renderAll();
 }
 
-function addPurchase(event) {
+async function addPurchase(event) {
   event.preventDefault();
   const date = document.getElementById('purchaseDate').value;
   const productId = document.getElementById('purchaseProduct').value;
@@ -1031,20 +1104,14 @@ function addPurchase(event) {
 
   if (!date || !productId || !quantity || !unitValue || !location) return;
 
-  state.purchases.push({
-    id: crypto.randomUUID(),
-    date,
-    productId,
-    quantity,
-    unitValue,
-    location,
-  });
-  saveData(storageKeys.purchases, state.purchases);
+  const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location };
+  state.purchases.push(purchase);
+  await savePurchaseToDb(purchase);
   event.target.reset();
   renderAll();
 }
 
-function addSale(event) {
+async function addSale(event) {
   event.preventDefault();
   const date = document.getElementById('saleDate').value;
   const client = document.getElementById('saleClient').value.trim();
@@ -1055,16 +1122,9 @@ function addSale(event) {
   if (!date || !client || !productId || !quantity || !unitPrice) return;
 
   const total = Number((quantity * unitPrice).toFixed(2));
-  state.sales.push({
-    id: crypto.randomUUID(),
-    date,
-    client,
-    productId,
-    quantity,
-    unitPrice,
-    total,
-  });
-  saveData(storageKeys.sales, state.sales);
+  const sale = { id: crypto.randomUUID(), date, client, productId, quantity, unitPrice, total };
+  state.sales.push(sale);
+  await saveSaleToDb(sale);
   event.target.reset();
   elements.saleTotal.value = '';
   renderAll();
@@ -1098,7 +1158,7 @@ function renderInventoryCountTable() {
     });
 }
 
-function saveInventoryCount() {
+async function saveInventoryCount() {
   const date = elements.inventoryDate.value;
   if (!date) {
     alert('Por favor, selecione a data da contagem');
@@ -1106,13 +1166,13 @@ function saveInventoryCount() {
   }
 
   const inputs = elements.inventoryCountTable.querySelectorAll('.inventory-count-input');
-  let savedCount = 0;
+  const newEntries = [];
   inputs.forEach(input => {
     if (input.value === '') return;
     const quantity = Number(input.value);
     if (quantity < 0) return;
     const type = input.dataset.productType === 'venda' ? 'product' : 'ingredient';
-    state.inventoryHistory.push({
+    newEntries.push({
       id: crypto.randomUUID(),
       date,
       type,
@@ -1121,15 +1181,17 @@ function saveInventoryCount() {
       quantity,
       source: 'count',
     });
-    savedCount++;
   });
 
-  if (!savedCount) {
+  if (!newEntries.length) {
     alert('Preencha ao menos uma quantidade antes de salvar');
     return;
   }
 
-  saveData(storageKeys.inventoryHistory, state.inventoryHistory);
+  for (const entry of newEntries) {
+    state.inventoryHistory.push(entry);
+    await saveInventoryEntryToDb(entry);
+  }
   renderAll();
 }
 
@@ -1346,7 +1408,7 @@ function initCostYearSelectors() {
   });
 }
 
-function addCost(e) {
+async function addCost(e) {
   e.preventDefault();
   const id = elements.costId.value || crypto.randomUUID();
   const cost = {
@@ -1360,7 +1422,7 @@ function addCost(e) {
   const idx = state.costs.findIndex(c => c.id === id);
   if (idx >= 0) state.costs[idx] = cost;
   else state.costs.push(cost);
-  saveData(storageKeys.costs, state.costs);
+  await saveCostToDb(cost);
   elements.costForm.reset();
   elements.costId.value = '';
   initCostYearSelectors();
@@ -1368,10 +1430,10 @@ function addCost(e) {
   renderDRE();
 }
 
-function deleteCost(id) {
+async function deleteCost(id) {
   if (!confirm('Excluir este custo?')) return;
   state.costs = state.costs.filter(c => c.id !== id);
-  saveData(storageKeys.costs, state.costs);
+  await deleteCostFromDb(id);
   renderCosts();
   renderDRE();
 }
@@ -1532,14 +1594,21 @@ async function handleLogout() {
 let appInitialized = false;
 
 async function initialize() {
-  state.products = await loadProducts();
-  state.purchases = loadData(storageKeys.purchases);
-  state.sales = loadData(storageKeys.sales);
-  state.inventory = loadData(storageKeys.inventory);
-  state.ingredients = loadData(storageKeys.ingredients);
-  state.inventoryHistory = loadData(storageKeys.inventoryHistory);
-  state.clients = loadData(storageKeys.clients);
-  state.costs = loadData(storageKeys.costs);
+  [
+    state.products,
+    state.purchases,
+    state.sales,
+    state.clients,
+    state.costs,
+    state.inventoryHistory,
+  ] = await Promise.all([
+    loadProducts(),
+    loadPurchases(),
+    loadSales(),
+    loadClients(),
+    loadCostsFromDb(),
+    loadInventoryHistory(),
+  ]);
 
   if (!appInitialized) {
     elements.productForm.addEventListener('submit', addProduct);
