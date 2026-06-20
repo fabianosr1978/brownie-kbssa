@@ -57,6 +57,7 @@ const storageKeys = {
   ingredients: 'brownie_ingredients',
   inventoryHistory: 'brownie_inventory_history',
   clients: 'brownie_clients',
+  costs: 'brownie_costs',
 };
 
 const state = {
@@ -67,6 +68,7 @@ const state = {
   ingredients: [],
   inventoryHistory: [],
   clients: [],
+  costs: [],
 };
 
 let currentProductEditId = null;
@@ -111,6 +113,19 @@ const elements = {
   clientForm: document.getElementById('clientForm'),
   clientsTable: document.querySelector('#clientsTable tbody'),
   saleClient: document.getElementById('saleClient'),
+  costForm: document.getElementById('costForm'),
+  costId: document.getElementById('costId'),
+  costName: document.getElementById('costName'),
+  costCategory: document.getElementById('costCategory'),
+  costValue: document.getElementById('costValue'),
+  costMonth: document.getElementById('costMonth'),
+  costYear: document.getElementById('costYear'),
+  costsTable: document.querySelector('#costsTable tbody'),
+  dreMonth: document.getElementById('dreMonth'),
+  dreYear: document.getElementById('dreYear'),
+  drePanel: document.getElementById('drePanel'),
+  costsFilterMonth: document.getElementById('costsFilterMonth'),
+  costsFilterYear: document.getElementById('costsFilterYear'),
 };
 
 function loadData(key) {
@@ -714,6 +729,8 @@ function renderAll() {
   renderDashboard();
   updateProductOptions();
   updateClientOptions();
+  renderCosts();
+  renderDRE();
 }
 
 async function addProduct(event) {
@@ -1190,6 +1207,187 @@ function handleRecipeProductChange() {
   }
 }
 
+// ── CUSTOS & DRE ──────────────────────────────────────────
+const COST_LABELS = {
+  fixo: 'Custo Fixo',
+  variavel: 'Custo Variável',
+  cmv: 'CMV',
+  tributos: 'Tributos',
+  prolabore: 'Pró-labore',
+};
+
+function initCostYearSelectors() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const years = [];
+  for (let y = currentYear - 2; y <= currentYear + 1; y++) years.push(y);
+
+  [elements.costYear, elements.dreYear, elements.costsFilterYear].forEach(el => {
+    if (!el) return;
+    if (el.tagName === 'INPUT') {
+      el.value = currentYear;
+    } else {
+      el.innerHTML = years.map(y => `<option value="${y}"${y === currentYear ? ' selected' : ''}>${y}</option>`).join('');
+    }
+  });
+
+  const currentMonth = now.getMonth() + 1;
+  [elements.costMonth, elements.dreMonth, elements.costsFilterMonth].forEach(el => {
+    if (el) el.value = currentMonth;
+  });
+}
+
+function addCost(e) {
+  e.preventDefault();
+  const id = elements.costId.value || crypto.randomUUID();
+  const cost = {
+    id,
+    name: elements.costName.value.trim(),
+    category: elements.costCategory.value,
+    value: Number(elements.costValue.value),
+    month: Number(elements.costMonth.value),
+    year: Number(elements.costYear.value),
+  };
+  const idx = state.costs.findIndex(c => c.id === id);
+  if (idx >= 0) state.costs[idx] = cost;
+  else state.costs.push(cost);
+  saveData(storageKeys.costs, state.costs);
+  elements.costForm.reset();
+  elements.costId.value = '';
+  initCostYearSelectors();
+  renderCosts();
+  renderDRE();
+}
+
+function deleteCost(id) {
+  if (!confirm('Excluir este custo?')) return;
+  state.costs = state.costs.filter(c => c.id !== id);
+  saveData(storageKeys.costs, state.costs);
+  renderCosts();
+  renderDRE();
+}
+
+function renderCosts() {
+  if (!elements.costsTable) return;
+  const filterMonth = Number(elements.costsFilterMonth.value);
+  const filterYear = Number(elements.costsFilterYear.value);
+  const filtered = state.costs.filter(c => c.month === filterMonth && c.year === filterYear)
+    .sort((a, b) => a.category.localeCompare(b.category));
+
+  elements.costsTable.innerHTML = filtered.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Nenhum custo lançado neste período</td></tr>'
+    : filtered.map(c => `
+      <tr>
+        <td>${String(c.month).padStart(2,'0')}/${c.year}</td>
+        <td>${c.name}</td>
+        <td><span class="cost-badge cost-badge-${c.category}">${COST_LABELS[c.category] || c.category}</span></td>
+        <td>${formatMoney(c.value)}</td>
+        <td><button class="btn-secondary" onclick="deleteCost('${c.id}')">Excluir</button></td>
+      </tr>
+    `).join('');
+}
+
+function renderDRE() {
+  if (!elements.drePanel) return;
+  const month = Number(elements.dreMonth.value);
+  const year = Number(elements.dreYear.value);
+
+  const salesOfMonth = state.sales.filter(s => {
+    const d = new Date(s.date + 'T00:00:00');
+    return d.getMonth() + 1 === month && d.getFullYear() === year;
+  });
+
+  const receitaBruta = salesOfMonth.reduce((sum, s) => sum + (s.total || 0), 0);
+
+  let cmvAuto = 0;
+  salesOfMonth.forEach(s => {
+    const product = state.products.find(p => p.id === s.productId);
+    if (product?.recipe?.unitCost) cmvAuto += product.recipe.unitCost * s.quantity;
+  });
+
+  const costsOfMonth = (cat) => state.costs
+    .filter(c => c.category === cat && c.month === month && c.year === year);
+
+  const cmvManualList = costsOfMonth('cmv');
+  const cmvManual = cmvManualList.reduce((sum, c) => sum + c.value, 0);
+  const cmvTotal = cmvAuto + cmvManual;
+
+  const fixoList = costsOfMonth('fixo');
+  const variavelList = costsOfMonth('variavel');
+  const totalFixo = fixoList.reduce((sum, c) => sum + c.value, 0);
+  const totalVariavel = variavelList.reduce((sum, c) => sum + c.value, 0);
+
+  const lucroBruto = receitaBruta - cmvTotal;
+  const margemBruta = receitaBruta > 0 ? (lucroBruto / receitaBruta * 100) : 0;
+  const resultadoOperacional = lucroBruto - totalFixo - totalVariavel;
+
+  const tributos = costsOfMonth('tributos').reduce((sum, c) => sum + c.value, 0);
+  const prolabore = costsOfMonth('prolabore').reduce((sum, c) => sum + c.value, 0);
+  const resultadoLiquido = resultadoOperacional - tributos - prolabore;
+
+  const monthName = new Date(year, month - 1, 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  const cls = v => v >= 0 ? 'dre-pos' : 'dre-neg';
+
+  const detailRows = (items) => items.map(c =>
+    `<div class="dre-row dre-detail"><span class="dre-label">• ${c.name}</span><span class="dre-value">${formatMoney(c.value)}</span></div>`
+  ).join('');
+
+  elements.drePanel.innerHTML = `
+    <div class="dre-container">
+      <div class="dre-period">${monthName}</div>
+
+      <div class="dre-section-title">RECEITA</div>
+      <div class="dre-row">
+        <span class="dre-label">(+) Receita Bruta de Vendas</span>
+        <span class="dre-value ${cls(receitaBruta)}">${formatMoney(receitaBruta)}</span>
+      </div>
+      <div class="dre-row">
+        <span class="dre-label">(−) CMV — Custo das Mercadorias</span>
+        <span class="dre-value dre-neg">${formatMoney(cmvTotal)}</span>
+      </div>
+      ${cmvAuto > 0 ? `<div class="dre-row dre-detail"><span class="dre-label">• Auto (fichas técnicas)</span><span class="dre-value">${formatMoney(cmvAuto)}</span></div>` : ''}
+      ${detailRows(cmvManualList)}
+      <div class="dre-row dre-subtotal">
+        <span class="dre-label">(=) LUCRO BRUTO</span>
+        <span class="dre-value ${cls(lucroBruto)}">${formatMoney(lucroBruto)}</span>
+        <span class="dre-margin">${margemBruta.toFixed(1)}%</span>
+      </div>
+
+      <div class="dre-section-title">DESPESAS OPERACIONAIS</div>
+      <div class="dre-row">
+        <span class="dre-label">(−) Custos Fixos</span>
+        <span class="dre-value dre-neg">${formatMoney(totalFixo)}</span>
+      </div>
+      ${detailRows(fixoList)}
+      <div class="dre-row">
+        <span class="dre-label">(−) Custos Variáveis</span>
+        <span class="dre-value dre-neg">${formatMoney(totalVariavel)}</span>
+      </div>
+      ${detailRows(variavelList)}
+      <div class="dre-row dre-subtotal">
+        <span class="dre-label">(=) RESULTADO OPERACIONAL</span>
+        <span class="dre-value ${cls(resultadoOperacional)}">${formatMoney(resultadoOperacional)}</span>
+      </div>
+
+      <div class="dre-section-title">DEDUÇÕES</div>
+      <div class="dre-row">
+        <span class="dre-label">(−) Tributos / Impostos</span>
+        <span class="dre-value dre-neg">${formatMoney(tributos)}</span>
+      </div>
+      <div class="dre-row">
+        <span class="dre-label">(−) Pró-labore</span>
+        <span class="dre-value dre-neg">${formatMoney(prolabore)}</span>
+      </div>
+
+      <div class="dre-row dre-result ${resultadoLiquido >= 0 ? 'dre-lucro' : 'dre-prejuizo'}">
+        <span class="dre-label">(=) RESULTADO LÍQUIDO</span>
+        <span class="dre-value">${formatMoney(resultadoLiquido)}</span>
+        <span class="dre-margin">${resultadoLiquido >= 0 ? '✓ Lucro' : '✗ Prejuízo'}</span>
+      </div>
+    </div>
+  `;
+}
+
 function showLogin() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appContent').style.display = 'none';
@@ -1232,6 +1430,7 @@ async function initialize() {
   state.ingredients = loadData(storageKeys.ingredients);
   state.inventoryHistory = loadData(storageKeys.inventoryHistory);
   state.clients = loadData(storageKeys.clients);
+  state.costs = loadData(storageKeys.costs);
 
   if (!appInitialized) {
     elements.productForm.addEventListener('submit', addProduct);
@@ -1284,6 +1483,22 @@ async function initialize() {
     if (elements.inventoryDate) {
       elements.inventoryDate.valueAsDate = new Date();
     }
+    if (elements.costForm) {
+      elements.costForm.addEventListener('submit', addCost);
+    }
+    if (elements.dreMonth) {
+      elements.dreMonth.addEventListener('change', renderDRE);
+    }
+    if (elements.dreYear) {
+      elements.dreYear.addEventListener('change', renderDRE);
+    }
+    if (elements.costsFilterMonth) {
+      elements.costsFilterMonth.addEventListener('change', renderCosts);
+    }
+    if (elements.costsFilterYear) {
+      elements.costsFilterYear.addEventListener('change', renderCosts);
+    }
+    initCostYearSelectors();
     const firstSection = document.getElementById('produtos');
     if (firstSection) firstSection.classList.add('active');
     initNavigation();

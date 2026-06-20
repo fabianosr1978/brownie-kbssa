@@ -52,6 +52,7 @@
         <button data-target="compras"><span class="nav-icon">🛒</span> Compras de Insumos</button>
         <button data-target="vendas"><span class="nav-icon">💰</span> Vendas</button>
         <button data-target="inventario"><span class="nav-icon">📦</span> Inventário</button>
+        <button data-target="custos"><span class="nav-icon">📈</span> Custos & DRE</button>
         <div class="nav-bottom">
           <button id="logoutBtn" class="logout-btn">⬅ Sair</button>
         </div>
@@ -393,6 +394,122 @@
               <th>Contagem</th>
               <th>Itens contados</th>
               <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="custos" class="card-section">
+      <h2>Custos Fixos e Variáveis</h2>
+
+      <div class="list-card">
+        <h3>Lançar custo</h3>
+        <form id="costForm" class="form-grid">
+          <input id="costId" type="hidden" />
+          <div>
+            <label for="costMonth">Mês</label>
+            <select id="costMonth" required>
+              <option value="1">Janeiro</option>
+              <option value="2">Fevereiro</option>
+              <option value="3">Março</option>
+              <option value="4">Abril</option>
+              <option value="5">Maio</option>
+              <option value="6">Junho</option>
+              <option value="7">Julho</option>
+              <option value="8">Agosto</option>
+              <option value="9">Setembro</option>
+              <option value="10">Outubro</option>
+              <option value="11">Novembro</option>
+              <option value="12">Dezembro</option>
+            </select>
+          </div>
+          <div>
+            <label for="costYear">Ano</label>
+            <input id="costYear" type="number" min="2024" max="2035" required />
+          </div>
+          <div>
+            <label for="costName">Descrição</label>
+            <input id="costName" type="text" placeholder="Ex: Conta de luz" required />
+          </div>
+          <div>
+            <label for="costCategory">Categoria</label>
+            <select id="costCategory" required>
+              <option value="fixo">Custo Fixo</option>
+              <option value="variavel">Custo Variável</option>
+              <option value="cmv">CMV (Mercadorias)</option>
+              <option value="tributos">Tributos / Impostos</option>
+              <option value="prolabore">Pró-labore</option>
+            </select>
+          </div>
+          <div>
+            <label for="costValue">Valor (R$)</label>
+            <input id="costValue" type="number" step="0.01" min="0" required />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Lançar custo</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="list-card">
+        <div class="chart-header">
+          <h3>DRE — Demonstração do Resultado</h3>
+          <div class="chart-controls">
+            <label for="dreMonth">Mês:</label>
+            <select id="dreMonth">
+              <option value="1">Janeiro</option>
+              <option value="2">Fevereiro</option>
+              <option value="3">Março</option>
+              <option value="4">Abril</option>
+              <option value="5">Maio</option>
+              <option value="6">Junho</option>
+              <option value="7">Julho</option>
+              <option value="8">Agosto</option>
+              <option value="9">Setembro</option>
+              <option value="10">Outubro</option>
+              <option value="11">Novembro</option>
+              <option value="12">Dezembro</option>
+            </select>
+            <label for="dreYear">Ano:</label>
+            <select id="dreYear"></select>
+          </div>
+        </div>
+        <div id="drePanel"></div>
+      </div>
+
+      <div class="list-card">
+        <div class="chart-header">
+          <h3>Custos lançados</h3>
+          <div class="chart-controls">
+            <label>Mês:</label>
+            <select id="costsFilterMonth">
+              <option value="1">Janeiro</option>
+              <option value="2">Fevereiro</option>
+              <option value="3">Março</option>
+              <option value="4">Abril</option>
+              <option value="5">Maio</option>
+              <option value="6">Junho</option>
+              <option value="7">Julho</option>
+              <option value="8">Agosto</option>
+              <option value="9">Setembro</option>
+              <option value="10">Outubro</option>
+              <option value="11">Novembro</option>
+              <option value="12">Dezembro</option>
+            </select>
+            <label>Ano:</label>
+            <select id="costsFilterYear"></select>
+          </div>
+        </div>
+        <table id="costsTable">
+          <thead>
+            <tr>
+              <th>Mês/Ano</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Valor</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody></tbody>
