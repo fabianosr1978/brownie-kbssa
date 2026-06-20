@@ -1219,8 +1219,8 @@ function handleRecipeProductChange() {
 let html5QrCode = null;
 
 function handleBarcodeDetected(barcode) {
-  const code = barcode.trim();
-  const product = state.products.find(p => p.barcode === code);
+  const code = barcode.trim().replace(/\s+/g, '');
+  const product = state.products.find(p => (p.barcode || '').trim().replace(/\s+/g, '') === code);
   const resultEl = document.getElementById('scanResult');
   if (!resultEl) return;
   resultEl.style.display = 'block';
@@ -1229,11 +1229,13 @@ function handleBarcodeDetected(barcode) {
     elements.purchaseProduct.value = product.id;
     elements.purchaseUnitValue.value = product.unitPrice || '';
     resultEl.className = 'scan-result scan-ok';
-    resultEl.innerHTML = `✓ <strong>${product.name}</strong> encontrado — selecione a quantidade e confirme.`;
+    resultEl.innerHTML = `✓ <strong>${product.name}</strong> encontrado — preencha a quantidade e confirme.`;
     document.getElementById('purchaseQuantity').focus();
   } else {
     resultEl.className = 'scan-result scan-error';
-    resultEl.innerHTML = `Código <strong>${code}</strong> não cadastrado. <a href="#" onclick="goToProductsWithBarcode('${code}');return false;">Cadastrar produto com este código</a>`;
+    resultEl.innerHTML = `Código lido: <strong>${code}</strong> — não encontrado nos produtos cadastrados.<br>
+      <small>Verifique se o produto foi salvo com exatamente este código.</small><br>
+      <a href="#" onclick="goToProductsWithBarcode('${code}');return false;">Cadastrar produto com este código →</a>`;
   }
 
   const barcodeInput = document.getElementById('barcodeInput');
