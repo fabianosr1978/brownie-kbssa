@@ -1672,13 +1672,16 @@ function renderPlanejamento() {
   }
 
   // Latest inventory count — read-only, comes from Contagem de estoque
+  // Uses >= so that when two counts share the same date, the last inserted wins
   const latestCount = {};
   state.inventoryHistory.forEach(entry => {
     if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
     if (entry.type !== 'ingredient') return;
     const n = entry.itemName;
-    if (!latestCount[n] || entry.date > latestCount[n].date) {
-      latestCount[n] = { quantity: entry.quantity, date: entry.date };
+    const entryDate = (entry.date || '').substring(0, 10);
+    const existingDate = (latestCount[n]?.date || '').substring(0, 10);
+    if (!latestCount[n] || entryDate >= existingDate) {
+      latestCount[n] = { quantity: entry.quantity, date: entryDate };
     }
   });
 
