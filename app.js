@@ -1691,7 +1691,7 @@ function renderPlanejamento() {
     row.dataset.saldoInicial = saldo;
     row.innerHTML = `
       <td>${product.name}</td>
-      <td class="plan-saldo-readonly">${saldo}<br><small class="plan-count-date">${countDate ? 'Contagem: ' + countDate : 'Sem contagem'}</small></td>
+      <td class="plan-saldo-readonly">${saldo}</td>
       <td class="plan-cell plan-compras">—</td>
       <td class="plan-cell plan-consumo">—</td>
       <td class="plan-cell plan-saldo-atual">—</td>
