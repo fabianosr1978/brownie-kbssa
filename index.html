@@ -539,9 +539,33 @@
 
     <section id="dashboard" class="card-section dashboard-section">
       <h2>Dashboard</h2>
+
+      <div class="dash-filter-bar">
+        <div class="chart-controls">
+          <label>Ano:</label>
+          <select id="chartYear"></select>
+          <label>Mês:</label>
+          <select id="dashMonth">
+            <option value="0">Todos os meses</option>
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+        </div>
+      </div>
+
       <div class="dashboard-cards">
         <div class="dashboard-card">
-          <h3>Total de vendas</h3>
+          <h3>Receita Bruta</h3>
           <p id="dashboardSalesTotal">R$ 0,00</p>
         </div>
         <div class="dashboard-card">
@@ -552,48 +576,43 @@
           <h3>Total de compras</h3>
           <p id="dashboardPurchaseTotal">R$ 0,00</p>
         </div>
+        <div class="dashboard-card" id="dashResultCard">
+          <h3>Resultado Líquido</h3>
+          <p id="dashboardResultado">R$ 0,00</p>
+        </div>
       </div>
 
-      <div class="dashboard-charts">
-        <div class="list-card chart-card">
-          <div class="chart-header">
-            <h3>Vendas mensais por cliente</h3>
-            <div class="chart-controls">
-              <label for="chartYear">Ano:</label>
-              <select id="chartYear"></select>
-            </div>
-          </div>
-          <canvas id="monthlySalesChart"></canvas>
-          <div id="chartLegend" class="chart-legend"></div>
+      <div class="list-card chart-card">
+        <div class="chart-header">
+          <h3>Vendas por Mês — Valor (R$) e Quantidade</h3>
         </div>
+        <div class="chart-wrap"><canvas id="salesByMonthChart"></canvas></div>
+      </div>
 
+      <div class="dash-row-2">
         <div class="list-card">
-          <h3>Vendas por produto</h3>
+          <h3>Vendas por Produto</h3>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="salesByProductChart"></canvas></div>
           <table id="productSalesTable">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Quantidade vendida</th>
-                <th>Receita</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Produto</th><th>Qtd</th><th>Receita</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-
         <div class="list-card">
-          <h3>Vendas por cliente</h3>
+          <h3>Vendas por Cliente</h3>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="salesByClientChart"></canvas></div>
           <table id="clientSalesTable">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Quantidade</th>
-                <th>Total gasto</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Cliente</th><th>Qtd</th><th>Total</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
+      </div>
+
+      <div class="list-card chart-card">
+        <div class="chart-header">
+          <h3>Análise de Custos e Resultado por Mês</h3>
+        </div>
+        <div class="chart-wrap"><canvas id="dreByMonthChart"></canvas></div>
       </div>
     </section>
   </main>
@@ -604,6 +623,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="app.js" defer></script>
 </body>
