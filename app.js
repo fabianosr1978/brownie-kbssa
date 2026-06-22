@@ -1811,17 +1811,18 @@ function calcularPlanejamento() {
     if (demanda > 0) { totalBuyCost += costEst; itemsToBuy++; }
 
     const saldoStyle = saldoAtual < 0 ? ' style="color:var(--accent-red);font-weight:700"' : '';
+    const fmtQty = v => Math.round(v);
     const demandaCell = demanda > 0
-      ? `<span class="plan-status-buy">${demanda.toFixed(3)}</span>`
+      ? `<span class="plan-status-buy">${fmtQty(demanda)}</span>`
       : '<span class="plan-status-ok">—</span>';
 
     resultTbody.innerHTML += `
       <tr>
         <td>${name}</td>
-        <td>${saldoInicial.toFixed(3)}</td>
-        <td>${compras > 0 ? compras.toFixed(3) : '0'}</td>
-        <td>${consumo > 0 ? consumo.toFixed(3) : '0'}</td>
-        <td${saldoStyle}>${saldoAtual.toFixed(3)}</td>
+        <td>${fmtQty(saldoInicial)}</td>
+        <td>${fmtQty(compras)}</td>
+        <td>${fmtQty(consumo)}</td>
+        <td${saldoStyle}>${fmtQty(saldoAtual)}</td>
         <td>${demandaCell}</td>
         <td>${product.unit || '-'}</td>
         <td>${demanda > 0 && unitCost > 0 ? formatMoney(costEst) : '—'}</td>
