@@ -897,20 +897,24 @@ tbody tr:hover { background: #fff8e6; }
   line-height: 1.5;
 }
 
-.plan-qty-input {
-  width: 100px;
+.plan-qty-input,
+.plan-saldo-input {
+  width: 90px;
   padding: 6px 10px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--primary);
   border-radius: 8px;
   font-size: 0.9rem;
   text-align: center;
-  background: var(--surface);
+  background: #fffde8;
   color: var(--text);
-  transition: border-color 0.2s;
+  font-weight: 600;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.plan-qty-input:focus {
+.plan-qty-input:focus,
+.plan-saldo-input:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(255,217,0,0.25);
 }
 
 .plan-summary {

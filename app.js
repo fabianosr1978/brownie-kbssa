@@ -1753,6 +1753,56 @@ function renderPlanejamento() {
     fromEl.value = from;
     toEl.value   = to;
   }
+
+  const tbody = document.querySelector('#planResultTable tbody');
+  if (!tbody) return;
+
+  const insumos = state.products.filter(p => p.type === 'insumo');
+  if (insumos.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Nenhum insumo cadastrado.</td></tr>';
+    return;
+  }
+
+  // Latest inventory count for pre-filling the editable saldo input
+  const latestCount = {};
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+    if (entry.type !== 'ingredient') return;
+    const n = entry.itemName;
+    if (!latestCount[n] || entry.date > latestCount[n].date) {
+      latestCount[n] = { quantity: entry.quantity, date: entry.date };
+    }
+  });
+
+  // Preserve values already typed by the user
+  const existingValues = {};
+  tbody.querySelectorAll('tr[data-product-id]').forEach(row => {
+    const input = row.querySelector('.plan-saldo-input');
+    if (input) existingValues[row.dataset.productId] = input.value;
+  });
+
+  tbody.innerHTML = '';
+  insumos.forEach(product => {
+    const prefill = existingValues[product.id] !== undefined
+      ? existingValues[product.id]
+      : Math.round(latestCount[product.name]?.quantity || 0);
+    const row = document.createElement('tr');
+    row.dataset.productId = product.id;
+    row.innerHTML = `
+      <td>${product.name}</td>
+      <td><input type="number" class="plan-saldo-input" value="${prefill}" min="0" step="1" title="Edite o saldo inicial manualmente" /></td>
+      <td class="plan-cell plan-compras">—</td>
+      <td class="plan-cell plan-consumo">—</td>
+      <td class="plan-cell plan-saldo-atual">—</td>
+      <td class="plan-cell plan-demanda">—</td>
+      <td>${product.unit || '-'}</td>
+      <td class="plan-cell plan-custo">—</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  const summaryEl = document.getElementById('planSummaryText');
+  if (summaryEl) summaryEl.style.display = 'none';
 }
 
 function calcularPlanejamento() {
@@ -1760,35 +1810,15 @@ function calcularPlanejamento() {
   const dateTo   = document.getElementById('planDateTo')?.value;
   if (!dateFrom || !dateTo) { alert('Selecione o período de análise.'); return; }
 
-  const resultTbody = document.querySelector('#planResultTable tbody');
-  const summaryEl   = document.getElementById('planSummaryText');
-  if (!resultTbody) return;
-
-  const insumos = state.products.filter(p => p.type === 'insumo');
-  if (insumos.length === 0) {
-    resultTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Nenhum insumo cadastrado.</td></tr>';
-    return;
-  }
-
-  // Last inventory count before the period start for each insumo
-  const latestBefore = {};
-  state.inventoryHistory.forEach(entry => {
-    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
-    if (entry.type !== 'ingredient') return;
-    if (entry.date > dateFrom) return;
-    const n = entry.itemName;
-    if (!latestBefore[n] || entry.date > latestBefore[n].date) {
-      latestBefore[n] = { quantity: entry.quantity, date: entry.date };
-    }
-  });
-
+  const summaryEl = document.getElementById('planSummaryText');
   let totalBuyCost = 0;
   let itemsToBuy = 0;
-  resultTbody.innerHTML = '';
 
-  insumos.forEach(product => {
-    const name = product.name;
-    const saldoInicial = latestBefore[name]?.quantity || 0;
+  document.querySelectorAll('#planResultTable tbody tr[data-product-id]').forEach(row => {
+    const product = state.products.find(p => p.id === row.dataset.productId);
+    if (!product) return;
+
+    const saldoInicial = Number(row.querySelector('.plan-saldo-input')?.value) || 0;
 
     const compras = state.purchases
       .filter(p => p.productId === product.id && p.date >= dateFrom && p.date <= dateTo)
@@ -1799,7 +1829,7 @@ function calcularPlanejamento() {
       if (sale.date < dateFrom || sale.date > dateTo) return;
       const sp = state.products.find(p => p.id === sale.productId);
       if (!sp?.recipe?.ingredients || !sp.recipe.yieldUnits) return;
-      const ing = sp.recipe.ingredients.find(i => i.name === name);
+      const ing = sp.recipe.ingredients.find(i => i.name === product.name);
       if (!ing) return;
       consumo += (ing.recipeQty / sp.recipe.yieldUnits) * sale.quantity;
     });
@@ -1810,34 +1840,22 @@ function calcularPlanejamento() {
     const costEst    = demanda * unitCost;
     if (demanda > 0) { totalBuyCost += costEst; itemsToBuy++; }
 
-    const saldoStyle = saldoAtual < 0 ? ' style="color:var(--accent-red);font-weight:700"' : '';
-    const fmtQty = v => Math.round(v);
-    const demandaCell = demanda > 0
-      ? `<span class="plan-status-buy">${fmtQty(demanda)}</span>`
+    row.querySelector('.plan-compras').textContent = Math.round(compras);
+    row.querySelector('.plan-consumo').textContent = Math.round(consumo);
+    row.querySelector('.plan-saldo-atual').innerHTML = saldoAtual < 0
+      ? `<span style="color:var(--accent-red);font-weight:700">${Math.round(saldoAtual)}</span>`
+      : String(Math.round(saldoAtual));
+    row.querySelector('.plan-demanda').innerHTML = demanda > 0
+      ? `<span class="plan-status-buy">${Math.round(demanda)}</span>`
       : '<span class="plan-status-ok">—</span>';
-
-    resultTbody.innerHTML += `
-      <tr>
-        <td>${name}</td>
-        <td>${fmtQty(saldoInicial)}</td>
-        <td>${fmtQty(compras)}</td>
-        <td>${fmtQty(consumo)}</td>
-        <td${saldoStyle}>${fmtQty(saldoAtual)}</td>
-        <td>${demandaCell}</td>
-        <td>${product.unit || '-'}</td>
-        <td>${demanda > 0 && unitCost > 0 ? formatMoney(costEst) : '—'}</td>
-      </tr>
-    `;
+    row.querySelector('.plan-custo').textContent = demanda > 0 && unitCost > 0 ? formatMoney(costEst) : '—';
   });
 
   if (summaryEl) {
-    if (itemsToBuy === 0) {
-      summaryEl.textContent = '✓ Estoque suficiente para o período selecionado!';
-      summaryEl.className = 'plan-summary plan-summary-ok';
-    } else {
-      summaryEl.textContent = `${itemsToBuy} insumo(s) com demanda de compra. Custo estimado: ${formatMoney(totalBuyCost)}`;
-      summaryEl.className = 'plan-summary plan-summary-warn';
-    }
+    summaryEl.textContent = itemsToBuy === 0
+      ? '✓ Estoque suficiente para o período selecionado!'
+      : `${itemsToBuy} insumo(s) com demanda de compra. Custo estimado: ${formatMoney(totalBuyCost)}`;
+    summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
     summaryEl.style.display = 'block';
   }
 }
