@@ -397,97 +397,6 @@ async function deleteSale(saleId) {
   renderAll();
 }
 
-function renderInventory() {
-  elements.inventoryTable.innerHTML = '';
-  const filterType = elements.inventoryTypeFilter?.value || '';
-
-  const latestCount = {};
-
-  const keyFor = entry => entry.type === 'product' ? `product:${entry.itemId}` : `ingredient:${entry.itemName}`;
-
-  state.inventoryHistory.forEach(entry => {
-    if (entry.source !== 'sale-deduction' && entry.source !== 'purchase') {
-      latestCount[keyFor(entry)] = { quantity: entry.quantity, date: entry.date };
-    }
-  });
-
-  const comprasSince = (productId, sinceDate) => state.purchases
-    .filter(p => p.productId === productId && (!sinceDate || p.date >= sinceDate))
-    .reduce((sum, p) => sum + p.quantity, 0);
-
-  const consumoSince = (ingredientName, sinceDate) => {
-    let total = 0;
-    state.sales.forEach(sale => {
-      if (sinceDate && sale.date < sinceDate) return;
-      const product = state.products.find(p => p.id === sale.productId);
-      if (!product?.recipe?.ingredients || !product.recipe.yieldUnits) return;
-      const ingredient = product.recipe.ingredients.find(i => i.name === ingredientName);
-      if (!ingredient) return;
-      total += (ingredient.recipeQty / product.recipe.yieldUnits) * sale.quantity;
-    });
-    return total;
-  };
-
-  const renderRow = (product, key, typeLabel, isIngredient) => {
-    const count = latestCount[key];
-    const lastCountValue = count ? count.quantity : 0;
-    const compras = comprasSince(product.id, count?.date);
-    const consumo = isIngredient ? consumoSince(product.name, count?.date) : 0;
-    const totalQty = Number((lastCountValue + compras).toFixed(2));
-    const saldoQty = Number((totalQty - consumo).toFixed(2));
-    const isNegative = saldoQty < 0;
-    const unitCost = product.packageQty ? product.unitPrice / product.packageQty : 0;
-    const valorEstoque = formatMoney(Math.max(saldoQty, 0) * unitCost);
-
-    const row = document.createElement('tr');
-    if (isNegative) row.classList.add('saldo-negativo');
-    row.innerHTML = `
-      <td>${product.name}</td>
-      <td>${typeLabel}</td>
-      <td>${product.unit || '-'}</td>
-      <td><input type="number" class="inventory-count-inline" step="0.01" min="0" placeholder="-" value="${count ? count.quantity : ''}" /></td>
-      <td>${compras}</td>
-      <td>${totalQty}</td>
-      <td>${saldoQty}${isNegative ? ' ⚠️' : ''}</td>
-      <td>${isNegative ? '—' : valorEstoque}</td>
-    `;
-
-    const input = row.querySelector('.inventory-count-inline');
-    input.addEventListener('change', async () => {
-      const newQty = Number(input.value);
-      if (input.value === '' || isNaN(newQty) || newQty < 0) return;
-      const today = new Date().toISOString().split('T')[0];
-      const type = product.type === 'venda' ? 'product' : 'ingredient';
-      const entry = {
-        id: crypto.randomUUID(),
-        date: today,
-        type,
-        itemId: type === 'product' ? product.id : undefined,
-        itemName: type === 'ingredient' ? product.name : undefined,
-        quantity: newQty,
-        source: 'count',
-      };
-      state.inventoryHistory.push(entry);
-      await saveInventoryEntryToDb(entry);
-      renderAll();
-    });
-
-    elements.inventoryTable.appendChild(row);
-  };
-
-  if (!filterType || filterType === 'venda') {
-    state.products.filter(product => product.type === 'venda').forEach(product => {
-      renderRow(product, `product:${product.id}`, 'Item de Venda', false);
-    });
-  }
-
-  if (!filterType || filterType === 'insumo') {
-    state.products.filter(product => product.type === 'insumo').forEach(product => {
-      renderRow(product, `ingredient:${product.name}`, 'Insumos', true);
-    });
-  }
-}
-
 function renderInventoryHistory() {
   elements.inventoryHistoryTable.innerHTML = '';
 
@@ -954,7 +863,6 @@ function renderAll() {
   renderSales();
   renderClients();
   renderInventoryCountTable();
-  renderInventory();
   renderInventoryHistory();
   renderDashboard();
   updateProductOptions();
@@ -1926,7 +1834,6 @@ async function initialize() {
     if (elements.inventoryTypeFilter) {
       elements.inventoryTypeFilter.addEventListener('change', () => {
         renderInventoryCountTable();
-        renderInventory();
       });
     }
     elements.saleQuantity.addEventListener('input', updateSaleTotal);
