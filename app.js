@@ -146,6 +146,7 @@ const state = {
 
 let currentProductEditId = null;
 let currentRecipeProductId = null;
+let currentSaleEditId = null;
 
 const elements = {
   recipeForm: document.getElementById('recipeForm'),
@@ -358,13 +359,36 @@ function renderSales() {
       <td>${sale.quantity}</td>
       <td>${formatMoney(sale.unitPrice)}</td>
       <td>${formatMoney(sale.total)}</td>
-      <td><button type="button" class="btn-secondary delete-sale-btn" data-id="${sale.id}">Excluir</button></td>
+      <td style="display:flex;gap:6px">
+        <button type="button" class="btn-secondary edit-sale-btn">Editar</button>
+        <button type="button" class="btn-secondary delete-sale-btn">Excluir</button>
+      </td>
     `;
-    row.querySelector('.delete-sale-btn').addEventListener('click', () => {
-      deleteSale(sale.id);
-    });
+    row.querySelector('.edit-sale-btn').addEventListener('click', () => startSaleEdit(sale.id));
+    row.querySelector('.delete-sale-btn').addEventListener('click', () => deleteSale(sale.id));
     elements.salesTable.appendChild(row);
   });
+}
+
+function startSaleEdit(saleId) {
+  const sale = state.sales.find(s => s.id === saleId);
+  if (!sale) return;
+  currentSaleEditId = saleId;
+  document.getElementById('saleDate').value = sale.date;
+  elements.saleClient.value = sale.client;
+  elements.saleProduct.value = sale.productId;
+  elements.saleQuantity.value = sale.quantity;
+  elements.saleUnitPrice.value = sale.unitPrice;
+  elements.saleTotal.value = sale.total;
+  document.querySelector('#salesForm .btn-primary').textContent = 'Atualizar venda';
+  document.getElementById('vendas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetSaleForm() {
+  currentSaleEditId = null;
+  elements.salesForm.reset();
+  elements.saleTotal.value = '';
+  document.querySelector('#salesForm .btn-primary').textContent = 'Registrar venda';
 }
 
 async function deleteSale(saleId) {
@@ -1122,11 +1146,20 @@ async function addSale(event) {
   if (!date || !client || !productId || !quantity || !unitPrice) return;
 
   const total = Number((quantity * unitPrice).toFixed(2));
-  const sale = { id: crypto.randomUUID(), date, client, productId, quantity, unitPrice, total };
-  state.sales.push(sale);
-  await saveSaleToDb(sale);
-  event.target.reset();
-  elements.saleTotal.value = '';
+
+  if (currentSaleEditId) {
+    const idx = state.sales.findIndex(s => s.id === currentSaleEditId);
+    if (idx >= 0) {
+      state.sales[idx] = { id: currentSaleEditId, date, client, productId, quantity, unitPrice, total };
+      await saveSaleToDb(state.sales[idx]);
+    }
+  } else {
+    const sale = { id: crypto.randomUUID(), date, client, productId, quantity, unitPrice, total };
+    state.sales.push(sale);
+    await saveSaleToDb(sale);
+  }
+
+  resetSaleForm();
   renderAll();
 }
 
