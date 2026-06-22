@@ -1671,7 +1671,7 @@ function renderPlanejamento() {
     return;
   }
 
-  // Latest inventory count for pre-filling the editable saldo input
+  // Latest inventory count — read-only, comes from Contagem de estoque
   const latestCount = {};
   state.inventoryHistory.forEach(entry => {
     if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
@@ -1682,23 +1682,16 @@ function renderPlanejamento() {
     }
   });
 
-  // Preserve values already typed by the user
-  const existingValues = {};
-  tbody.querySelectorAll('tr[data-product-id]').forEach(row => {
-    const input = row.querySelector('.plan-saldo-input');
-    if (input) existingValues[row.dataset.productId] = input.value;
-  });
-
   tbody.innerHTML = '';
   insumos.forEach(product => {
-    const prefill = existingValues[product.id] !== undefined
-      ? existingValues[product.id]
-      : Math.round(latestCount[product.name]?.quantity || 0);
+    const saldo = Math.round(latestCount[product.name]?.quantity || 0);
+    const countDate = latestCount[product.name]?.date || null;
     const row = document.createElement('tr');
     row.dataset.productId = product.id;
+    row.dataset.saldoInicial = saldo;
     row.innerHTML = `
       <td>${product.name}</td>
-      <td><input type="number" class="plan-saldo-input" value="${prefill}" min="0" step="1" title="Edite o saldo inicial manualmente" /></td>
+      <td class="plan-saldo-readonly">${saldo}<br><small class="plan-count-date">${countDate ? 'Contagem: ' + countDate : 'Sem contagem'}</small></td>
       <td class="plan-cell plan-compras">—</td>
       <td class="plan-cell plan-consumo">—</td>
       <td class="plan-cell plan-saldo-atual">—</td>
@@ -1726,7 +1719,7 @@ function calcularPlanejamento() {
     const product = state.products.find(p => p.id === row.dataset.productId);
     if (!product) return;
 
-    const saldoInicial = Number(row.querySelector('.plan-saldo-input')?.value) || 0;
+    const saldoInicial = Number(row.dataset.saldoInicial) || 0;
 
     const compras = state.purchases
       .filter(p => p.productId === product.id && p.date >= dateFrom && p.date <= dateTo)
