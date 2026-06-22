@@ -961,6 +961,7 @@ function renderAll() {
   updateClientOptions();
   renderCosts();
   renderDRE();
+  renderPlanejamento();
 }
 
 async function addProduct(event) {
@@ -1722,6 +1723,141 @@ function renderDRE() {
   `;
 }
 
+// ── PLANEJAMENTO DE COMPRAS ──────────────────────────────────
+
+function getIngredientCurrentStock() {
+  const latestCount = {};
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source !== 'sale-deduction' && entry.source !== 'purchase') {
+      const key = entry.type === 'ingredient' ? `ingredient:${entry.itemName}` : `product:${entry.itemId}`;
+      if (!latestCount[key] || entry.date > latestCount[key].date) {
+        latestCount[key] = { quantity: entry.quantity, date: entry.date };
+      }
+    }
+  });
+
+  const result = {};
+  state.products.filter(p => p.type === 'insumo').forEach(product => {
+    const key = `ingredient:${product.name}`;
+    const count = latestCount[key];
+    const lastCountDate = count?.date;
+    const lastCountQty = count?.quantity || 0;
+
+    const purchasesSince = state.purchases
+      .filter(p2 => p2.productId === product.id && (!lastCountDate || p2.date >= lastCountDate))
+      .reduce((sum, p2) => sum + p2.quantity, 0);
+
+    let consumoSince = 0;
+    state.sales.forEach(sale => {
+      if (lastCountDate && sale.date < lastCountDate) return;
+      const sp = state.products.find(p => p.id === sale.productId);
+      if (!sp?.recipe?.ingredients || !sp.recipe.yieldUnits) return;
+      const ing = sp.recipe.ingredients.find(i => i.name === product.name);
+      if (!ing) return;
+      consumoSince += (ing.recipeQty / sp.recipe.yieldUnits) * sale.quantity;
+    });
+
+    result[product.name] = {
+      product,
+      currentStock: Math.max(0, Number((lastCountQty + purchasesSince - consumoSince).toFixed(3))),
+    };
+  });
+  return result;
+}
+
+function renderPlanejamento() {
+  const tbody = document.querySelector('#planProductionTable tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const saleProducts = state.products.filter(p => p.type === 'venda' && p.recipe?.ingredients?.length);
+
+  if (saleProducts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">Cadastre produtos de venda com ficha técnica para gerar o planejamento.</td></tr>';
+    return;
+  }
+
+  saleProducts.forEach(product => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${product.name}</td>
+      <td>${product.recipe.yieldUnits || 1} un.</td>
+      <td><input type="number" class="plan-qty-input" min="0" step="1" placeholder="0" data-product-id="${product.id}" /></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  const resultSection = document.getElementById('planResultSection');
+  if (resultSection) resultSection.style.display = 'none';
+}
+
+function calcularPlanejamento() {
+  const stockMap = getIngredientCurrentStock();
+  const needs = {};
+
+  document.querySelectorAll('.plan-qty-input').forEach(input => {
+    const plannedQty = Number(input.value) || 0;
+    if (!plannedQty) return;
+    const product = state.products.find(p => p.id === input.dataset.productId);
+    if (!product?.recipe?.ingredients || !product.recipe.yieldUnits) return;
+    product.recipe.ingredients.forEach(ing => {
+      const needed = (ing.recipeQty / product.recipe.yieldUnits) * plannedQty;
+      if (!needs[ing.name]) needs[ing.name] = 0;
+      needs[ing.name] += needed;
+    });
+  });
+
+  if (Object.keys(needs).length === 0) {
+    alert('Informe a quantidade planejada de ao menos um produto.');
+    return;
+  }
+
+  const resultSection = document.getElementById('planResultSection');
+  const resultTbody = document.querySelector('#planResultTable tbody');
+  if (!resultSection || !resultTbody) return;
+
+  let totalCost = 0;
+  resultTbody.innerHTML = '';
+
+  Object.keys(needs).sort().forEach(name => {
+    const needed = needs[name];
+    const { product, currentStock } = stockMap[name] || { product: null, currentStock: 0 };
+    const toBuy = Math.max(0, needed - currentStock);
+    const unit = product?.unit || '-';
+    const unitCost = product?.packageQty ? product.unitPrice / product.packageQty : 0;
+    const costEst = toBuy * unitCost;
+    totalCost += costEst;
+
+    const statusHtml = toBuy <= 0
+      ? '<span class="plan-status-ok">✓ OK</span>'
+      : '<span class="plan-status-buy">⚠ Comprar</span>';
+
+    resultTbody.innerHTML += `
+      <tr>
+        <td>${name}</td>
+        <td>${currentStock.toFixed(3)}</td>
+        <td>${needed.toFixed(3)}</td>
+        <td>${toBuy > 0 ? toBuy.toFixed(3) : '—'}</td>
+        <td>${unit}</td>
+        <td>${unitCost > 0 ? formatMoney(costEst) : '—'}</td>
+        <td>${statusHtml}</td>
+      </tr>
+    `;
+  });
+
+  const summaryEl = document.getElementById('planSummaryText');
+  const itemsToBuy = Object.keys(needs).filter(n => needs[n] > (stockMap[n]?.currentStock || 0)).length;
+  if (summaryEl) {
+    summaryEl.textContent = itemsToBuy === 0
+      ? '✓ Estoque suficiente para a produção planejada!'
+      : `${itemsToBuy} insumo(s) precisam ser comprados. Custo estimado: ${formatMoney(totalCost)}`;
+    summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
+  }
+
+  resultSection.style.display = 'block';
+  resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function showLogin() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appContent').style.display = 'none';
@@ -1843,6 +1979,8 @@ async function initialize() {
       elements.costsFilterYear.addEventListener('change', renderCosts);
     }
     initCostYearSelectors();
+    const calcPlanBtn = document.getElementById('calcPlanBtn');
+    if (calcPlanBtn) calcPlanBtn.addEventListener('click', calcularPlanejamento);
     const firstSection = document.getElementById('produtos');
     if (firstSection) firstSection.classList.add('active');
     initNavigation();

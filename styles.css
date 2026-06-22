@@ -889,6 +889,55 @@ tbody tr:hover { background: #fff8e6; }
 .dre-prejuizo .dre-value { color: var(--accent-red); }
 .dre-prejuizo .dre-margin { color: var(--accent-red); }
 
+/* ── PLANEJAMENTO DE COMPRAS ── */
+.plan-hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.plan-qty-input {
+  width: 100px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+.plan-qty-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.plan-summary {
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.plan-summary-ok {
+  background: #d1fae5;
+  color: var(--success);
+}
+.plan-summary-warn {
+  background: #fee2e2;
+  color: var(--accent-red);
+}
+
+.plan-status-ok {
+  color: var(--success);
+  font-weight: 700;
+}
+.plan-status-buy {
+  color: var(--accent-red);
+  font-weight: 700;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .app-layout { grid-template-columns: 1fr; }
