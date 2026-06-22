@@ -1395,6 +1395,9 @@ function initNavigation() {
       if (targetId === 'dashboard') {
         requestAnimationFrame(() => renderDashboard());
       }
+      if (targetId === 'planejamento') {
+        requestAnimationFrame(() => calcularPlanejamento());
+      }
 
       // Close Cadastro submenu when navigating away
       if (!button.classList.contains('submenu-toggle') && group) {
@@ -1725,137 +1728,117 @@ function renderDRE() {
 
 // ── PLANEJAMENTO DE COMPRAS ──────────────────────────────────
 
-function getIngredientCurrentStock() {
-  const latestCount = {};
-  state.inventoryHistory.forEach(entry => {
-    if (entry.source !== 'sale-deduction' && entry.source !== 'purchase') {
-      const key = entry.type === 'ingredient' ? `ingredient:${entry.itemName}` : `product:${entry.itemId}`;
-      if (!latestCount[key] || entry.date > latestCount[key].date) {
-        latestCount[key] = { quantity: entry.quantity, date: entry.date };
-      }
-    }
-  });
+function getPlanWeekRange() {
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMon = day === 0 ? -6 : 1 - day;
+  const mon = new Date(today); mon.setDate(today.getDate() + diffToMon);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt = d => d.toISOString().substring(0, 10);
+  return { from: fmt(mon), to: fmt(sun) };
+}
 
-  const result = {};
-  state.products.filter(p => p.type === 'insumo').forEach(product => {
-    const key = `ingredient:${product.name}`;
-    const count = latestCount[key];
-    const lastCountDate = count?.date;
-    const lastCountQty = count?.quantity || 0;
-
-    const purchasesSince = state.purchases
-      .filter(p2 => p2.productId === product.id && (!lastCountDate || p2.date >= lastCountDate))
-      .reduce((sum, p2) => sum + p2.quantity, 0);
-
-    let consumoSince = 0;
-    state.sales.forEach(sale => {
-      if (lastCountDate && sale.date < lastCountDate) return;
-      const sp = state.products.find(p => p.id === sale.productId);
-      if (!sp?.recipe?.ingredients || !sp.recipe.yieldUnits) return;
-      const ing = sp.recipe.ingredients.find(i => i.name === product.name);
-      if (!ing) return;
-      consumoSince += (ing.recipeQty / sp.recipe.yieldUnits) * sale.quantity;
-    });
-
-    result[product.name] = {
-      product,
-      currentStock: Math.max(0, Number((lastCountQty + purchasesSince - consumoSince).toFixed(3))),
-    };
-  });
-  return result;
+function getPlanMonthRange() {
+  const today = new Date();
+  const from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().substring(0, 10);
+  const to   = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().substring(0, 10);
+  return { from, to };
 }
 
 function renderPlanejamento() {
-  const tbody = document.querySelector('#planProductionTable tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const saleProducts = state.products.filter(p => p.type === 'venda' && p.recipe?.ingredients?.length);
-
-  if (saleProducts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">Cadastre produtos de venda com ficha técnica para gerar o planejamento.</td></tr>';
-    return;
+  const fromEl = document.getElementById('planDateFrom');
+  const toEl   = document.getElementById('planDateTo');
+  if (fromEl && !fromEl.value && toEl && !toEl.value) {
+    const { from, to } = getPlanWeekRange();
+    fromEl.value = from;
+    toEl.value   = to;
   }
-
-  saleProducts.forEach(product => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${product.name}</td>
-      <td>${product.recipe.yieldUnits || 1} un.</td>
-      <td><input type="number" class="plan-qty-input" min="0" step="1" placeholder="0" data-product-id="${product.id}" /></td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  const resultSection = document.getElementById('planResultSection');
-  if (resultSection) resultSection.style.display = 'none';
 }
 
 function calcularPlanejamento() {
-  const stockMap = getIngredientCurrentStock();
-  const needs = {};
+  const dateFrom = document.getElementById('planDateFrom')?.value;
+  const dateTo   = document.getElementById('planDateTo')?.value;
+  if (!dateFrom || !dateTo) { alert('Selecione o período de análise.'); return; }
 
-  document.querySelectorAll('.plan-qty-input').forEach(input => {
-    const plannedQty = Number(input.value) || 0;
-    if (!plannedQty) return;
-    const product = state.products.find(p => p.id === input.dataset.productId);
-    if (!product?.recipe?.ingredients || !product.recipe.yieldUnits) return;
-    product.recipe.ingredients.forEach(ing => {
-      const needed = (ing.recipeQty / product.recipe.yieldUnits) * plannedQty;
-      if (!needs[ing.name]) needs[ing.name] = 0;
-      needs[ing.name] += needed;
-    });
-  });
+  const resultTbody = document.querySelector('#planResultTable tbody');
+  const summaryEl   = document.getElementById('planSummaryText');
+  if (!resultTbody) return;
 
-  if (Object.keys(needs).length === 0) {
-    alert('Informe a quantidade planejada de ao menos um produto.');
+  const insumos = state.products.filter(p => p.type === 'insumo');
+  if (insumos.length === 0) {
+    resultTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Nenhum insumo cadastrado.</td></tr>';
     return;
   }
 
-  const resultSection = document.getElementById('planResultSection');
-  const resultTbody = document.querySelector('#planResultTable tbody');
-  if (!resultSection || !resultTbody) return;
+  // Last inventory count before the period start for each insumo
+  const latestBefore = {};
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+    if (entry.type !== 'ingredient') return;
+    if (entry.date > dateFrom) return;
+    const n = entry.itemName;
+    if (!latestBefore[n] || entry.date > latestBefore[n].date) {
+      latestBefore[n] = { quantity: entry.quantity, date: entry.date };
+    }
+  });
 
-  let totalCost = 0;
+  let totalBuyCost = 0;
+  let itemsToBuy = 0;
   resultTbody.innerHTML = '';
 
-  Object.keys(needs).sort().forEach(name => {
-    const needed = needs[name];
-    const { product, currentStock } = stockMap[name] || { product: null, currentStock: 0 };
-    const toBuy = Math.max(0, needed - currentStock);
-    const unit = product?.unit || '-';
-    const unitCost = product?.packageQty ? product.unitPrice / product.packageQty : 0;
-    const costEst = toBuy * unitCost;
-    totalCost += costEst;
+  insumos.forEach(product => {
+    const name = product.name;
+    const saldoInicial = latestBefore[name]?.quantity || 0;
 
-    const statusHtml = toBuy <= 0
-      ? '<span class="plan-status-ok">✓ OK</span>'
-      : '<span class="plan-status-buy">⚠ Comprar</span>';
+    const compras = state.purchases
+      .filter(p => p.productId === product.id && p.date >= dateFrom && p.date <= dateTo)
+      .reduce((sum, p) => sum + p.quantity, 0);
+
+    let consumo = 0;
+    state.sales.forEach(sale => {
+      if (sale.date < dateFrom || sale.date > dateTo) return;
+      const sp = state.products.find(p => p.id === sale.productId);
+      if (!sp?.recipe?.ingredients || !sp.recipe.yieldUnits) return;
+      const ing = sp.recipe.ingredients.find(i => i.name === name);
+      if (!ing) return;
+      consumo += (ing.recipeQty / sp.recipe.yieldUnits) * sale.quantity;
+    });
+
+    const saldoAtual = saldoInicial + compras - consumo;
+    const demanda    = Math.max(0, -saldoAtual);
+    const unitCost   = product.packageQty ? product.unitPrice / product.packageQty : 0;
+    const costEst    = demanda * unitCost;
+    if (demanda > 0) { totalBuyCost += costEst; itemsToBuy++; }
+
+    const saldoStyle = saldoAtual < 0 ? ' style="color:var(--accent-red);font-weight:700"' : '';
+    const demandaCell = demanda > 0
+      ? `<span class="plan-status-buy">${demanda.toFixed(3)}</span>`
+      : '<span class="plan-status-ok">—</span>';
 
     resultTbody.innerHTML += `
       <tr>
         <td>${name}</td>
-        <td>${currentStock.toFixed(3)}</td>
-        <td>${needed.toFixed(3)}</td>
-        <td>${toBuy > 0 ? toBuy.toFixed(3) : '—'}</td>
-        <td>${unit}</td>
-        <td>${unitCost > 0 ? formatMoney(costEst) : '—'}</td>
-        <td>${statusHtml}</td>
+        <td>${saldoInicial.toFixed(3)}</td>
+        <td>${compras > 0 ? compras.toFixed(3) : '0'}</td>
+        <td>${consumo > 0 ? consumo.toFixed(3) : '0'}</td>
+        <td${saldoStyle}>${saldoAtual.toFixed(3)}</td>
+        <td>${demandaCell}</td>
+        <td>${product.unit || '-'}</td>
+        <td>${demanda > 0 && unitCost > 0 ? formatMoney(costEst) : '—'}</td>
       </tr>
     `;
   });
 
-  const summaryEl = document.getElementById('planSummaryText');
-  const itemsToBuy = Object.keys(needs).filter(n => needs[n] > (stockMap[n]?.currentStock || 0)).length;
   if (summaryEl) {
-    summaryEl.textContent = itemsToBuy === 0
-      ? '✓ Estoque suficiente para a produção planejada!'
-      : `${itemsToBuy} insumo(s) precisam ser comprados. Custo estimado: ${formatMoney(totalCost)}`;
-    summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
+    if (itemsToBuy === 0) {
+      summaryEl.textContent = '✓ Estoque suficiente para o período selecionado!';
+      summaryEl.className = 'plan-summary plan-summary-ok';
+    } else {
+      summaryEl.textContent = `${itemsToBuy} insumo(s) com demanda de compra. Custo estimado: ${formatMoney(totalBuyCost)}`;
+      summaryEl.className = 'plan-summary plan-summary-warn';
+    }
+    summaryEl.style.display = 'block';
   }
-
-  resultSection.style.display = 'block';
-  resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function showLogin() {
@@ -1981,6 +1964,15 @@ async function initialize() {
     initCostYearSelectors();
     const calcPlanBtn = document.getElementById('calcPlanBtn');
     if (calcPlanBtn) calcPlanBtn.addEventListener('click', calcularPlanejamento);
+    document.querySelectorAll('.plan-period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const range = btn.dataset.period === 'month' ? getPlanMonthRange() : getPlanWeekRange();
+        const fromEl = document.getElementById('planDateFrom');
+        const toEl   = document.getElementById('planDateTo');
+        if (fromEl) fromEl.value = range.from;
+        if (toEl)   toEl.value   = range.to;
+      });
+    });
     const firstSection = document.getElementById('produtos');
     if (firstSection) firstSection.classList.add('active');
     initNavigation();

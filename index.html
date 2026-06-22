@@ -621,42 +621,45 @@
       <h2>Planejamento de Compras</h2>
 
       <div class="list-card">
-        <h3>Produção Planejada</h3>
-        <p class="plan-hint">Informe quantas unidades planeja produzir de cada produto. O sistema calculará a necessidade de insumos com base nas fichas técnicas e no estoque atual.</p>
-        <div style="overflow-x:auto">
-          <table id="planProductionTable">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Rendimento (receita)</th>
-                <th>Qtd a produzir</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <h3>Período de Análise</h3>
+        <p class="plan-hint">Saldo inicial (último inventário) + compras no período − consumo pelas vendas (fichas técnicas) = demanda de compra.</p>
+        <div class="form-grid" style="max-width:480px">
+          <div>
+            <label for="planDateFrom">De</label>
+            <input type="date" id="planDateFrom" />
+          </div>
+          <div>
+            <label for="planDateTo">Até</label>
+            <input type="date" id="planDateTo" />
+          </div>
         </div>
-        <div class="form-actions" style="margin-top:16px">
-          <button type="button" id="calcPlanBtn" class="btn-primary">Calcular necessidade de compras</button>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn-secondary plan-period-btn" data-period="week">Esta semana</button>
+          <button type="button" class="btn-secondary plan-period-btn" data-period="month">Este mês</button>
+          <button type="button" id="calcPlanBtn" class="btn-primary">Calcular</button>
         </div>
       </div>
 
-      <div class="list-card" id="planResultSection" style="display:none">
-        <h3>Necessidade de Insumos</h3>
-        <p id="planSummaryText" class="plan-summary"></p>
+      <div class="list-card" id="planResultSection">
+        <h3>Demanda de Compras por Insumo</h3>
+        <p id="planSummaryText" class="plan-summary" style="display:none"></p>
         <div style="overflow-x:auto">
           <table id="planResultTable">
             <thead>
               <tr>
-                <th>Ingrediente</th>
-                <th>Estoque Atual</th>
-                <th>Necessário</th>
+                <th>Insumo</th>
+                <th>Saldo Inicial</th>
+                <th>+ Compras</th>
+                <th>− Consumo</th>
+                <th>= Saldo Atual</th>
                 <th>A Comprar</th>
                 <th>Unidade</th>
                 <th>Custo Est.</th>
-                <th>Status</th>
               </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Selecione o período e clique em Calcular.</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
