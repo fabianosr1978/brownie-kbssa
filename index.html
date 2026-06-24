@@ -520,66 +520,94 @@
     </section>
 
     <section id="dashboard" class="card-section dashboard-section">
-      <h2>Dashboard</h2>
+      <h2>Dashboard BI</h2>
 
+      <!-- Filtros + Atalhos de Período -->
       <div class="dash-filter-bar">
-        <div class="chart-controls">
-          <label>Ano:</label>
-          <select id="chartYear"></select>
-          <label>Mês:</label>
-          <select id="dashMonth">
-            <option value="0">Todos os meses</option>
-            <option value="1">Janeiro</option>
-            <option value="2">Fevereiro</option>
-            <option value="3">Março</option>
-            <option value="4">Abril</option>
-            <option value="5">Maio</option>
-            <option value="6">Junho</option>
-            <option value="7">Julho</option>
-            <option value="8">Agosto</option>
-            <option value="9">Setembro</option>
-            <option value="10">Outubro</option>
-            <option value="11">Novembro</option>
-            <option value="12">Dezembro</option>
-          </select>
-          <label>Produto:</label>
-          <select id="dashProduct">
-            <option value="">Todos os produtos</option>
-          </select>
-          <label>Cliente:</label>
-          <select id="dashClient">
-            <option value="">Todos os clientes</option>
-          </select>
+        <div class="dash-filter-top">
+          <div class="chart-controls">
+            <label>Ano:</label>
+            <select id="chartYear"></select>
+            <label>Mês:</label>
+            <select id="dashMonth">
+              <option value="0">Todos os meses</option>
+              <option value="1">Janeiro</option>
+              <option value="2">Fevereiro</option>
+              <option value="3">Março</option>
+              <option value="4">Abril</option>
+              <option value="5">Maio</option>
+              <option value="6">Junho</option>
+              <option value="7">Julho</option>
+              <option value="8">Agosto</option>
+              <option value="9">Setembro</option>
+              <option value="10">Outubro</option>
+              <option value="11">Novembro</option>
+              <option value="12">Dezembro</option>
+            </select>
+            <label>Produto:</label>
+            <select id="dashProduct">
+              <option value="">Todos os produtos</option>
+            </select>
+            <label>Cliente:</label>
+            <select id="dashClient">
+              <option value="">Todos os clientes</option>
+            </select>
+          </div>
+          <div class="dash-quick-btns">
+            <button type="button" class="dash-quick-btn" data-quick="thisMonth">Este mês</button>
+            <button type="button" class="dash-quick-btn" data-quick="lastMonth">Mês anterior</button>
+            <button type="button" class="dash-quick-btn" data-quick="annual">Anual</button>
+          </div>
         </div>
       </div>
 
+      <!-- 6 KPIs -->
       <div class="dashboard-cards">
-        <div class="dashboard-card">
-          <h3>Receita Bruta</h3>
-          <p id="dashboardSalesTotal">R$ 0,00</p>
+        <div class="dashboard-card kpi-card-receita">
+          <div class="kpi-label">Receita Bruta</div>
+          <div class="kpi-value" id="dashboardSalesTotal">R$ 0,00</div>
+          <div class="kpi-sub" id="dashboardSalesCount">0 vendas</div>
         </div>
-        <div class="dashboard-card">
-          <h3>Itens vendidos</h3>
-          <p id="dashboardSalesCount">0</p>
+        <div class="dashboard-card kpi-card-ticket">
+          <div class="kpi-label">Ticket Médio</div>
+          <div class="kpi-value" id="dashboardTicketMedio">R$ 0,00</div>
+          <div class="kpi-sub">por venda</div>
         </div>
-        <div class="dashboard-card">
-          <h3>Total de compras</h3>
-          <p id="dashboardPurchaseTotal">R$ 0,00</p>
+        <div class="dashboard-card kpi-card-cmv">
+          <div class="kpi-label">CMV</div>
+          <div class="kpi-value kpi-danger" id="dashboardCMV">R$ 0,00</div>
+          <div class="kpi-sub" id="dashKpiCMVPct">0% da receita</div>
+        </div>
+        <div class="dashboard-card kpi-card-margem">
+          <div class="kpi-label">Margem Bruta</div>
+          <div class="kpi-value" id="dashboardMargemBruta">0%</div>
+          <div class="kpi-sub">Receita − CMV</div>
+        </div>
+        <div class="dashboard-card kpi-card-compras">
+          <div class="kpi-label">Total de Compras</div>
+          <div class="kpi-value" id="dashboardPurchaseTotal">R$ 0,00</div>
+          <div class="kpi-sub">no período</div>
         </div>
         <div class="dashboard-card" id="dashResultCard">
-          <h3>Resultado Líquido</h3>
-          <p id="dashboardResultado">R$ 0,00</p>
+          <div class="kpi-label">Resultado Líquido</div>
+          <div class="kpi-value" id="dashboardResultado">R$ 0,00</div>
+          <div class="kpi-sub" id="dashKpiResultPct">0% da receita</div>
         </div>
       </div>
 
+      <!-- SEÇÃO: VENDAS -->
+      <div class="dash-section-title">VENDAS</div>
+
       <div class="list-card chart-card">
-        <div class="chart-header">
-          <h3>Vendas por Mês — Valor (R$) e Quantidade</h3>
-        </div>
+        <h3>Receita e Volume por Mês</h3>
         <div class="chart-wrap"><canvas id="salesByMonthChart"></canvas></div>
       </div>
 
       <div class="dash-row-2">
+        <div class="list-card chart-card">
+          <h3>Receita e Volume por Semana</h3>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="salesByWeekChart"></canvas></div>
+        </div>
         <div class="list-card">
           <h3>Vendas por Produto</h3>
           <div class="chart-wrap chart-wrap-sm"><canvas id="salesByProductChart"></canvas></div>
@@ -588,22 +616,27 @@
             <tbody></tbody>
           </table>
         </div>
-        <div class="list-card">
-          <h3>Vendas por Cliente</h3>
-          <div class="chart-wrap chart-wrap-sm"><canvas id="salesByClientChart"></canvas></div>
-          <table id="clientSalesTable">
-            <thead><tr><th>Cliente</th><th>Qtd</th><th>Total</th><th>%</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
       </div>
 
+      <div class="list-card">
+        <h3>Vendas por Cliente</h3>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="salesByClientChart"></canvas></div>
+        <table id="clientSalesTable">
+          <thead><tr><th>Cliente</th><th>Qtd</th><th>Total</th><th>%</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- SEÇÃO: FINANCEIRO -->
+      <div class="dash-section-title">FINANCEIRO</div>
+
       <div class="list-card chart-card">
-        <div class="chart-header">
-          <h3>Análise de Custos e Resultado por Mês</h3>
-        </div>
+        <h3>DRE — Receita, Custos e Resultado por Mês</h3>
         <div class="chart-wrap"><canvas id="dreByMonthChart"></canvas></div>
       </div>
+
+      <!-- SEÇÃO: COMPRAS -->
+      <div class="dash-section-title">COMPRAS</div>
 
       <div class="dash-row-2">
         <div class="list-card chart-card">
@@ -616,10 +649,11 @@
         </div>
       </div>
 
+      <!-- SEÇÃO: INVENTÁRIO -->
+      <div class="dash-section-title">INVENTÁRIO</div>
+
       <div class="list-card chart-card">
-        <div class="chart-header">
-          <h3>Valor do Estoque por Mês — Acompanhamento de Inventário</h3>
-        </div>
+        <h3>Valor do Estoque por Mês — Acompanhamento</h3>
         <div class="chart-wrap"><canvas id="inventoryByMonthChart"></canvas></div>
       </div>
     </section>

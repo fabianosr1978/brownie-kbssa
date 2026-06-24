@@ -680,6 +680,47 @@ function drawSalesByClientChart() {
     : sorted.map(c => { const pct = totalRev>0?(summary[c].total/totalRev*100).toFixed(1):'0.0'; return `<tr><td>${c}</td><td>${summary[c].qty}</td><td>${formatMoney(summary[c].total)}</td><td>${pct}%</td></tr>`; }).join('');
 }
 
+function drawSalesByWeekChart() {
+  const year = getDashYear();
+  const productId = getDashProduct();
+  const client = getDashClient();
+  const weekData = {};
+  state.sales.forEach(s => {
+    if (!s.date || parseInt(s.date.substring(0,4)) !== year) return;
+    if (productId && s.productId !== productId) return;
+    if (client && s.client !== client) return;
+    const week = getWeekOfYear(s.date);
+    if (!weekData[week]) weekData[week] = { total: 0, qty: 0 };
+    weekData[week].total += s.total || 0;
+    weekData[week].qty += s.quantity || 0;
+  });
+  const weeks = Object.keys(weekData).map(Number).sort((a, b) => a - b);
+  destroyChart('salesByWeek');
+  const ctx = document.getElementById('salesByWeekChart');
+  if (!ctx) return;
+  chartInstances['salesByWeek'] = new Chart(ctx, {
+    data: {
+      labels: weeks.map(w => 'Sem. ' + w),
+      datasets: [
+        { type: 'bar',  label: 'Receita (R$)', data: weeks.map(w => weekData[w].total), backgroundColor: '#FFD900', borderColor: '#e6c200', borderWidth: 1, yAxisID: 'yR', order: 2 },
+        { type: 'line', label: 'Quantidade',   data: weeks.map(w => weekData[w].qty),   borderColor: '#1a1208', backgroundColor: '#1a1208', pointRadius: 4, tension: 0.3, yAxisID: 'yQ', order: 1 }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? ' Receita: ' + formatMoney(c.raw) : ' Qtd: ' + c.raw } }
+      },
+      scales: {
+        yR: { type: 'linear', position: 'left',  beginAtZero: true, grid: { color: '#e8dfc8' }, ticks: { callback: v => 'R$ ' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)) } },
+        yQ: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
 function drawDreByMonthChart() {
   const year = getDashYear();
   const receita=new Array(12).fill(0), cmvArr=new Array(12).fill(0), fixoArr=new Array(12).fill(0), varArr=new Array(12).fill(0), tribArr=new Array(12).fill(0), prolArr=new Array(12).fill(0);
@@ -909,32 +950,53 @@ function renderDashboard() {
   const month = getDashMonth();
   const filtered = getFilteredSalesDash();
 
-  const totalSales = filtered.reduce((sum, s) => sum + (s.total||0), 0);
-  const totalQty   = filtered.reduce((sum, s) => sum + (s.quantity||0), 0);
+  const totalSales    = filtered.reduce((sum, s) => sum + (s.total||0), 0);
+  const numSales      = filtered.length;
   const totalPurchases = state.purchases
     .filter(p => { if (!p.date) return false; const y=parseInt(p.date.substring(0,4)), m2=parseInt(p.date.substring(5,7)); return y===year && (month===0||m2===month); })
     .reduce((sum, p) => sum + (p.quantity*p.unitValue), 0);
 
   const costsF = state.costs.filter(c => c.year===year && (month===0||c.month===month));
   let cmvAuto = 0;
-  filtered.forEach(s => { const p=state.products.find(p=>p.id===s.productId); if (p?.recipe?.unitCost) cmvAuto+=p.recipe.unitCost*s.quantity; });
-  const sumCat = cat => costsF.filter(c=>c.category===cat).reduce((s,c)=>s+c.value,0);
-  const resultado = totalSales - cmvAuto - sumCat('cmv') - sumCat('fixo') - sumCat('variavel') - sumCat('tributos') - sumCat('prolabore');
+  filtered.forEach(s => { const p=state.products.find(pr=>pr.id===s.productId); if (p?.recipe?.unitCost) cmvAuto+=p.recipe.unitCost*s.quantity; });
+  const sumCat    = cat => costsF.filter(c=>c.category===cat).reduce((s,c)=>s+c.value,0);
+  const cmvTotal  = cmvAuto + sumCat('cmv');
+  const resultado = totalSales - cmvTotal - sumCat('fixo') - sumCat('variavel') - sumCat('tributos') - sumCat('prolabore');
+  const margemBruta   = totalSales > 0 ? ((totalSales - cmvTotal) / totalSales * 100) : 0;
+  const cmvPct        = totalSales > 0 ? (cmvTotal / totalSales * 100) : 0;
+  const resultadoPct  = totalSales > 0 ? (resultado / totalSales * 100) : 0;
+  const ticketMedio   = numSales > 0 ? totalSales / numSales : 0;
 
-  elements.dashboardSalesTotal.textContent = formatMoney(totalSales);
-  elements.dashboardSalesCount.textContent = totalQty;
+  elements.dashboardSalesTotal.textContent    = formatMoney(totalSales);
+  elements.dashboardSalesCount.textContent    = numSales + (numSales !== 1 ? ' vendas' : ' venda');
   elements.dashboardPurchaseTotal.textContent = formatMoney(totalPurchases);
 
-  const resultEl = document.getElementById('dashboardResultado');
-  const resultCard = document.getElementById('dashResultCard');
-  if (resultEl) { resultEl.textContent = formatMoney(resultado); resultEl.style.color = resultado >= 0 ? 'var(--success)' : 'var(--accent-red)'; }
-  if (resultCard) resultCard.style.borderTopColor = resultado >= 0 ? 'var(--success)' : 'var(--accent-red)';
+  const el = id => document.getElementById(id);
+  const resultEl = el('dashboardResultado'); const resultCard = el('dashResultCard');
+  if (resultEl)  { resultEl.textContent = formatMoney(resultado); resultEl.style.color = resultado >= 0 ? 'var(--success,#2d8653)' : 'var(--accent-red)'; }
+  if (resultCard) resultCard.style.borderTopColor = resultado >= 0 ? 'var(--success,#2d8653)' : 'var(--accent-red)';
+
+  const ticketEl = el('dashboardTicketMedio');
+  if (ticketEl) ticketEl.textContent = formatMoney(ticketMedio);
+
+  const cmvEl = el('dashboardCMV');
+  if (cmvEl) cmvEl.textContent = formatMoney(cmvTotal);
+
+  const cmvPctEl = el('dashKpiCMVPct');
+  if (cmvPctEl) cmvPctEl.textContent = cmvPct.toFixed(1) + '% da receita';
+
+  const margemEl = el('dashboardMargemBruta');
+  if (margemEl) { margemEl.textContent = margemBruta.toFixed(1) + '%'; margemEl.style.color = margemBruta >= 30 ? 'var(--success,#2d8653)' : margemBruta >= 0 ? 'var(--text)' : 'var(--accent-red)'; }
+
+  const resPctEl = el('dashKpiResultPct');
+  if (resPctEl) resPctEl.textContent = resultadoPct.toFixed(1) + '% da receita';
 
   populateChartYears();
   populateDashProductOptions();
   populateDashClientOptions();
   requestAnimationFrame(() => {
     drawSalesByMonthChart();
+    drawSalesByWeekChart();
     drawSalesByProductChart();
     drawSalesByClientChart();
     drawDreByMonthChart();
@@ -1988,10 +2050,31 @@ async function initialize() {
     if (dashProductEl) dashProductEl.addEventListener('change', () => renderDashboard());
     const dashClientEl = document.getElementById('dashClient');
     if (dashClientEl) dashClientEl.addEventListener('change', () => renderDashboard());
+    document.querySelectorAll('.dash-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const now = new Date();
+        const yr = now.getFullYear(), mo = now.getMonth() + 1;
+        const yearEl = document.getElementById('chartYear');
+        const monthEl = document.getElementById('dashMonth');
+        if (btn.dataset.quick === 'thisMonth') {
+          if (yearEl) yearEl.value = yr;
+          if (monthEl) monthEl.value = mo;
+        } else if (btn.dataset.quick === 'lastMonth') {
+          const lm = mo === 1 ? 12 : mo - 1;
+          const ly = mo === 1 ? yr - 1 : yr;
+          if (yearEl) yearEl.value = ly;
+          if (monthEl) monthEl.value = lm;
+        } else if (btn.dataset.quick === 'annual') {
+          if (yearEl) yearEl.value = yr;
+          if (monthEl) monthEl.value = 0;
+        }
+        renderDashboard();
+      });
+    });
     window.addEventListener('resize', () => {
       if (document.getElementById('dashboard')?.classList.contains('active')) {
-        drawSalesByMonthChart(); drawSalesByProductChart(); drawSalesByClientChart(); drawDreByMonthChart();
-        drawPurchasesByMonthChart(); drawPurchasesByWeekChart(); drawInventoryByMonthChart();
+        drawSalesByMonthChart(); drawSalesByWeekChart(); drawSalesByProductChart(); drawSalesByClientChart();
+        drawDreByMonthChart(); drawPurchasesByMonthChart(); drawPurchasesByWeekChart(); drawInventoryByMonthChart();
       }
     });
     if (elements.loadBaseRecipeBtn) {
