@@ -796,7 +796,7 @@ function drawInventoryByMonthChart() {
     type: 'line',
     data: { labels: MONTHS_SHORT, datasets:[{ label:'Valor do Estoque (R$)', data:values, borderColor:'#2e6db0', backgroundColor:'rgba(46,109,176,0.08)', pointBackgroundColor:'#2e6db0', pointRadius:5, tension:0.3, fill:true, spanGaps:true }] },
     options: { responsive:true, plugins:{ legend:{position:'top'}, tooltip:{callbacks:{label:c=>c.raw!=null?' '+formatMoney(c.raw):' Sem dados'}} },
-      scales:{ y:{ ticks:{callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
+      scales:{ y:{ min:0, ticks:{stepSize:50, callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
   });
 }
 
