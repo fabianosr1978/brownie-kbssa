@@ -536,12 +536,53 @@ function filterSalesByPeriod(year, month) {
   });
 }
 
+function getDashProduct() {
+  return document.getElementById('dashProduct')?.value || '';
+}
+
+function getFilteredSalesDash() {
+  const year = getDashYear();
+  const month = getDashMonth();
+  const productId = getDashProduct();
+  return state.sales.filter(s => {
+    if (!s.date) return false;
+    const y = parseInt(s.date.substring(0,4));
+    const m = parseInt(s.date.substring(5,7));
+    if (y !== year) return false;
+    if (month !== 0 && m !== month) return false;
+    if (productId && s.productId !== productId) return false;
+    return true;
+  });
+}
+
+function populateDashProductOptions() {
+  const sel = document.getElementById('dashProduct');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos os produtos</option>';
+  state.products.filter(p => p.type === 'venda').forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function getWeekOfYear(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+}
+
 function drawSalesByMonthChart() {
   const year = getDashYear();
+  const productId = getDashProduct();
   const revenue = new Array(12).fill(0);
   const qty = new Array(12).fill(0);
   state.sales.forEach(s => {
     if (!s.date || parseInt(s.date.substring(0,4)) !== year) return;
+    if (productId && s.productId !== productId) return;
     const m = parseInt(s.date.substring(5,7)) - 1;
     if (m >= 0 && m < 12) { revenue[m] += s.total || 0; qty[m] += s.quantity || 0; }
   });
@@ -568,8 +609,7 @@ function drawSalesByMonthChart() {
 }
 
 function drawSalesByProductChart() {
-  const year = getDashYear(); const month = getDashMonth();
-  const filtered = filterSalesByPeriod(year, month);
+  const filtered = getFilteredSalesDash();
   const summary = {};
   filtered.forEach(s => {
     const p = state.products.find(p => p.id === s.productId);
@@ -577,31 +617,33 @@ function drawSalesByProductChart() {
     if (!summary[name]) summary[name] = { qty:0, total:0 };
     summary[name].qty += s.quantity; summary[name].total += s.total;
   });
-  const labels = Object.keys(summary).sort((a,b) => summary[b].total - summary[a].total);
+  const sorted = Object.keys(summary).sort((a,b) => summary[b].total - summary[a].total);
+  const totalRev = sorted.reduce((s,n) => s + summary[n].total, 0);
   const colors = ['#FFD900','#e07b39','#2e6db0','#2e7d52','#8b3d1c','#cc1515','#8e2eb0','#2eb08a'];
   destroyChart('salesByProduct');
   const ctx = document.getElementById('salesByProductChart');
   if (ctx) {
     chartInstances['salesByProduct'] = new Chart(ctx, {
-      type:'doughnut',
-      data:{ labels, datasets:[{ data:labels.map(l=>summary[l].total), backgroundColor:colors.slice(0,labels.length), borderWidth:2, borderColor:'#fff' }] },
-      options:{ responsive:true, plugins:{ legend:{position:'bottom'}, tooltip:{callbacks:{label:c=>` ${c.label}: ${formatMoney(c.raw)}`}} }}
+      type: 'bar',
+      data: { labels: sorted, datasets:[{ label:'Receita (R$)', data:sorted.map(n=>summary[n].total), backgroundColor:sorted.map((_,i)=>colors[i%colors.length]), borderRadius:6 }] },
+      options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${formatMoney(c.raw)}`}} },
+        scales:{ x:{ ticks:{callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
     });
   }
   const tbody = document.querySelector('#productSalesTable tbody');
-  if (tbody) tbody.innerHTML = labels.length===0 ? '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'
-    : labels.map(n=>`<tr><td>${n}</td><td>${summary[n].qty}</td><td>${formatMoney(summary[n].total)}</td></tr>`).join('');
+  if (tbody) tbody.innerHTML = sorted.length===0 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'
+    : sorted.map(n => { const pct = totalRev>0?(summary[n].total/totalRev*100).toFixed(1):'0.0'; return `<tr><td>${n}</td><td>${summary[n].qty}</td><td>${formatMoney(summary[n].total)}</td><td>${pct}%</td></tr>`; }).join('');
 }
 
 function drawSalesByClientChart() {
-  const year = getDashYear(); const month = getDashMonth();
-  const filtered = filterSalesByPeriod(year, month);
+  const filtered = getFilteredSalesDash();
   const summary = {};
   filtered.forEach(s => {
     if (!summary[s.client]) summary[s.client] = { qty:0, total:0 };
     summary[s.client].qty += s.quantity; summary[s.client].total += s.total;
   });
   const sorted = Object.keys(summary).sort((a,b) => summary[b].total - summary[a].total);
+  const totalRev = sorted.reduce((s,c) => s + summary[c].total, 0);
   const colors = ['#2e6db0','#8b3d1c','#2e7d52','#cc1515','#8e2eb0','#FFD900','#e07b39'];
   destroyChart('salesByClient');
   const ctx = document.getElementById('salesByClientChart');
@@ -614,8 +656,8 @@ function drawSalesByClientChart() {
     });
   }
   const tbody = document.querySelector('#clientSalesTable tbody');
-  if (tbody) tbody.innerHTML = sorted.length===0 ? '<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'
-    : sorted.map(c=>`<tr><td>${c}</td><td>${summary[c].qty}</td><td>${formatMoney(summary[c].total)}</td></tr>`).join('');
+  if (tbody) tbody.innerHTML = sorted.length===0 ? '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'
+    : sorted.map(c => { const pct = totalRev>0?(summary[c].total/totalRev*100).toFixed(1):'0.0'; return `<tr><td>${c}</td><td>${summary[c].qty}</td><td>${formatMoney(summary[c].total)}</td><td>${pct}%</td></tr>`; }).join('');
 }
 
 function drawDreByMonthChart() {
@@ -662,6 +704,81 @@ function drawDreByMonthChart() {
 }
 
 function drawMonthlySalesChart() { drawSalesByMonthChart(); }
+
+function drawPurchasesByMonthChart() {
+  const year = getDashYear();
+  const values = new Array(12).fill(0);
+  state.purchases.forEach(p => {
+    if (!p.date || parseInt(p.date.substring(0,4)) !== year) return;
+    const m = parseInt(p.date.substring(5,7)) - 1;
+    if (m >= 0 && m < 12) values[m] += p.quantity * p.unitValue;
+  });
+  destroyChart('purchasesByMonth');
+  const ctx = document.getElementById('purchasesByMonthChart');
+  if (!ctx) return;
+  chartInstances['purchasesByMonth'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: MONTHS_SHORT, datasets:[{ label:'Compras (R$)', data:values, backgroundColor:'#8b3d1c', borderRadius:6 }] },
+    options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${formatMoney(c.raw)}`}} },
+      scales:{ y:{ ticks:{callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
+  });
+}
+
+function drawPurchasesByWeekChart() {
+  const year = getDashYear();
+  const weekData = {};
+  state.purchases.forEach(p => {
+    if (!p.date || parseInt(p.date.substring(0,4)) !== year) return;
+    const week = getWeekOfYear(p.date);
+    if (!weekData[week]) weekData[week] = 0;
+    weekData[week] += p.quantity * p.unitValue;
+  });
+  const weeks = Object.keys(weekData).map(Number).sort((a,b) => a-b);
+  destroyChart('purchasesByWeek');
+  const ctx = document.getElementById('purchasesByWeekChart');
+  if (!ctx) return;
+  chartInstances['purchasesByWeek'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: weeks.map(w=>`Sem. ${w}`), datasets:[{ label:'Compras (R$)', data:weeks.map(w=>weekData[w]), backgroundColor:'#e07b39', borderRadius:4 }] },
+    options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${formatMoney(c.raw)}`}} },
+      scales:{ y:{ ticks:{callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
+  });
+}
+
+function drawInventoryByMonthChart() {
+  const year = getDashYear();
+  const values = new Array(12).fill(null);
+  for (let m = 0; m < 12; m++) {
+    const monthFirst = `${year}-${String(m+1).padStart(2,'0')}-01`;
+    const latestPerIng = {};
+    state.inventoryHistory.forEach(entry => {
+      if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+      if (entry.type !== 'ingredient') return;
+      const d = (entry.date||'').substring(0,10);
+      if (d > monthFirst) return;
+      const n = entry.itemName;
+      if (!latestPerIng[n] || d >= latestPerIng[n].date) latestPerIng[n] = { quantity: entry.quantity, date: d };
+    });
+    let totalValue = 0; let hasData = false;
+    Object.entries(latestPerIng).forEach(([name, data]) => {
+      const product = state.products.find(p => p.name === name && p.type === 'insumo');
+      if (!product) return;
+      const unitCost = product.packageQty ? product.unitPrice / product.packageQty : 0;
+      totalValue += data.quantity * unitCost;
+      hasData = true;
+    });
+    values[m] = hasData ? totalValue : null;
+  }
+  destroyChart('inventoryByMonth');
+  const ctx = document.getElementById('inventoryByMonthChart');
+  if (!ctx) return;
+  chartInstances['inventoryByMonth'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: MONTHS_SHORT, datasets:[{ label:'Valor do Estoque (R$)', data:values, borderColor:'#2e6db0', backgroundColor:'rgba(46,109,176,0.08)', pointBackgroundColor:'#2e6db0', pointRadius:5, tension:0.3, fill:true, spanGaps:true }] },
+    options: { responsive:true, plugins:{ legend:{position:'top'}, tooltip:{callbacks:{label:c=>c.raw!=null?' '+formatMoney(c.raw):' Sem dados'}} },
+      scales:{ y:{ ticks:{callback:v=>'R$ '+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))}, grid:{color:'#e8dfc8'} } } }
+  });
+}
 
 // -- LEGADO: mantido para não quebrar chamadas existentes --
 function _oldDrawMonthlySalesChart() {
@@ -770,7 +887,7 @@ function _oldDrawMonthlySalesChart() {
 function renderDashboard() {
   const year = getDashYear();
   const month = getDashMonth();
-  const filtered = filterSalesByPeriod(year, month);
+  const filtered = getFilteredSalesDash();
 
   const totalSales = filtered.reduce((sum, s) => sum + (s.total||0), 0);
   const totalQty   = filtered.reduce((sum, s) => sum + (s.quantity||0), 0);
@@ -794,11 +911,15 @@ function renderDashboard() {
   if (resultCard) resultCard.style.borderTopColor = resultado >= 0 ? 'var(--success)' : 'var(--accent-red)';
 
   populateChartYears();
+  populateDashProductOptions();
   requestAnimationFrame(() => {
     drawSalesByMonthChart();
     drawSalesByProductChart();
     drawSalesByClientChart();
     drawDreByMonthChart();
+    drawPurchasesByMonthChart();
+    drawPurchasesByWeekChart();
+    drawInventoryByMonthChart();
   });
 }
 
@@ -1842,9 +1963,12 @@ async function initialize() {
     }
     const dashMonthEl = document.getElementById('dashMonth');
     if (dashMonthEl) dashMonthEl.addEventListener('change', () => renderDashboard());
+    const dashProductEl = document.getElementById('dashProduct');
+    if (dashProductEl) dashProductEl.addEventListener('change', () => renderDashboard());
     window.addEventListener('resize', () => {
       if (document.getElementById('dashboard')?.classList.contains('active')) {
         drawSalesByMonthChart(); drawSalesByProductChart(); drawSalesByClientChart(); drawDreByMonthChart();
+        drawPurchasesByMonthChart(); drawPurchasesByWeekChart(); drawInventoryByMonthChart();
       }
     });
     if (elements.loadBaseRecipeBtn) {

@@ -542,6 +542,10 @@
             <option value="11">Novembro</option>
             <option value="12">Dezembro</option>
           </select>
+          <label>Produto:</label>
+          <select id="dashProduct">
+            <option value="">Todos os produtos</option>
+          </select>
         </div>
       </div>
 
@@ -576,7 +580,7 @@
           <h3>Vendas por Produto</h3>
           <div class="chart-wrap chart-wrap-sm"><canvas id="salesByProductChart"></canvas></div>
           <table id="productSalesTable">
-            <thead><tr><th>Produto</th><th>Qtd</th><th>Receita</th></tr></thead>
+            <thead><tr><th>Produto</th><th>Qtd</th><th>Receita</th><th>%</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -584,7 +588,7 @@
           <h3>Vendas por Cliente</h3>
           <div class="chart-wrap chart-wrap-sm"><canvas id="salesByClientChart"></canvas></div>
           <table id="clientSalesTable">
-            <thead><tr><th>Cliente</th><th>Qtd</th><th>Total</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Qtd</th><th>Total</th><th>%</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -595,6 +599,24 @@
           <h3>Análise de Custos e Resultado por Mês</h3>
         </div>
         <div class="chart-wrap"><canvas id="dreByMonthChart"></canvas></div>
+      </div>
+
+      <div class="dash-row-2">
+        <div class="list-card chart-card">
+          <h3>Compras por Mês (R$)</h3>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="purchasesByMonthChart"></canvas></div>
+        </div>
+        <div class="list-card chart-card">
+          <h3>Compras por Semana (R$)</h3>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="purchasesByWeekChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="list-card chart-card">
+        <div class="chart-header">
+          <h3>Valor do Estoque por Mês — Acompanhamento de Inventário</h3>
+        </div>
+        <div class="chart-wrap"><canvas id="inventoryByMonthChart"></canvas></div>
       </div>
     </section>
 
