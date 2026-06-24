@@ -540,10 +540,15 @@ function getDashProduct() {
   return document.getElementById('dashProduct')?.value || '';
 }
 
+function getDashClient() {
+  return document.getElementById('dashClient')?.value || '';
+}
+
 function getFilteredSalesDash() {
   const year = getDashYear();
   const month = getDashMonth();
   const productId = getDashProduct();
+  const client = getDashClient();
   return state.sales.filter(s => {
     if (!s.date) return false;
     const y = parseInt(s.date.substring(0,4));
@@ -551,6 +556,7 @@ function getFilteredSalesDash() {
     if (y !== year) return false;
     if (month !== 0 && m !== month) return false;
     if (productId && s.productId !== productId) return false;
+    if (client && s.client !== client) return false;
     return true;
   });
 }
@@ -564,6 +570,20 @@ function populateDashProductOptions() {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function populateDashClientOptions() {
+  const sel = document.getElementById('dashClient');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos os clientes</option>';
+  state.clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = c.name;
     sel.appendChild(opt);
   });
   if (current) sel.value = current;
@@ -912,6 +932,7 @@ function renderDashboard() {
 
   populateChartYears();
   populateDashProductOptions();
+  populateDashClientOptions();
   requestAnimationFrame(() => {
     drawSalesByMonthChart();
     drawSalesByProductChart();
@@ -1965,6 +1986,8 @@ async function initialize() {
     if (dashMonthEl) dashMonthEl.addEventListener('change', () => renderDashboard());
     const dashProductEl = document.getElementById('dashProduct');
     if (dashProductEl) dashProductEl.addEventListener('change', () => renderDashboard());
+    const dashClientEl = document.getElementById('dashClient');
+    if (dashClientEl) dashClientEl.addEventListener('change', () => renderDashboard());
     window.addEventListener('resize', () => {
       if (document.getElementById('dashboard')?.classList.contains('active')) {
         drawSalesByMonthChart(); drawSalesByProductChart(); drawSalesByClientChart(); drawDreByMonthChart();
