@@ -1393,12 +1393,13 @@ async function addPurchase(event) {
   const unitValue = Number(document.getElementById('purchaseUnitValue').value);
   const location = document.getElementById('purchaseLocation').value.trim();
 
-  if (!date || !productId || !quantity || !unitValue || !location) return;
+  if (!date || !productId || !quantity || !unitValue) return;
 
   const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location };
   state.purchases.push(purchase);
   await savePurchaseToDb(purchase);
   event.target.reset();
+  document.getElementById('purchaseTotalDisplay').value = '';
   renderAll();
 }
 
@@ -1592,7 +1593,8 @@ function handleBarcodeDetected(barcode) {
 
   if (product) {
     elements.purchaseProduct.value = product.id;
-    elements.purchaseUnitValue.value = product.unitPrice || '';
+    const pkg = product.packageQty && product.packageQty > 0 ? product.packageQty : 1;
+    elements.purchaseUnitValue.value = ((product.unitPrice || 0) / pkg).toFixed(4);
     resultEl.className = 'scan-result scan-ok';
     resultEl.innerHTML = `✓ <strong>${product.name}</strong> encontrado — preencha a quantidade e confirme.`;
     document.getElementById('purchaseQuantity').focus();
@@ -2048,6 +2050,25 @@ async function initialize() {
     elements.recipeForm.addEventListener('submit', addRecipeProduct);
     elements.recipeProduct.addEventListener('change', handleRecipeProductChange);
     elements.purchaseForm.addEventListener('submit', addPurchase);
+    elements.purchaseProduct.addEventListener('change', () => {
+      const product = state.products.find(p => p.id === elements.purchaseProduct.value);
+      const uvEl = document.getElementById('purchaseUnitValue');
+      if (product && uvEl) {
+        const pkg = product.packageQty && product.packageQty > 0 ? product.packageQty : 1;
+        uvEl.value = (product.unitPrice / pkg).toFixed(4);
+      } else if (uvEl) {
+        uvEl.value = '';
+      }
+      updatePurchaseTotalDisplay();
+    });
+    const updatePurchaseTotalDisplay = () => {
+      const qty = parseFloat(document.getElementById('purchaseQuantity')?.value) || 0;
+      const uv  = parseFloat(document.getElementById('purchaseUnitValue')?.value) || 0;
+      const totalEl = document.getElementById('purchaseTotalDisplay');
+      if (totalEl) totalEl.value = formatMoney(qty * uv);
+    };
+    document.getElementById('purchaseQuantity')?.addEventListener('input', updatePurchaseTotalDisplay);
+    document.getElementById('purchaseUnitValue')?.addEventListener('input', updatePurchaseTotalDisplay);
     elements.salesForm.addEventListener('submit', addSale);
     if (elements.clientForm) {
       elements.clientForm.addEventListener('submit', addClient);
