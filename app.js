@@ -8,6 +8,13 @@ const SUPABASE_KEY = 'sb_publishable_v6madC5lhwPQUK6gZ_hE4g_FSPoOqjQ';
 let supabaseClient;
 
 function productToDb(p) {
+  let recipe = p.recipe ? { ...p.recipe } : null;
+  if (p.usarComoInsumo) {
+    recipe = recipe || {};
+    recipe.usarComoInsumo = true;
+  } else if (recipe) {
+    delete recipe.usarComoInsumo;
+  }
   return {
     id: p.id,
     type: p.type,
@@ -16,12 +23,16 @@ function productToDb(p) {
     package_qty: p.packageQty,
     unit: p.unit,
     unit_price: p.unitPrice,
-    recipe: p.recipe || null,
+    recipe: recipe || null,
     barcode: p.barcode || null,
   };
 }
 
 function dbToProduct(row) {
+  const rawRecipe = row.recipe;
+  const usarComoInsumo = rawRecipe?.usarComoInsumo === true;
+  const recipe = rawRecipe && (rawRecipe.ingredients || rawRecipe.unitCost != null || rawRecipe.yieldUnits)
+    ? rawRecipe : undefined;
   return {
     id: row.id,
     type: row.type,
@@ -30,7 +41,8 @@ function dbToProduct(row) {
     packageQty: row.package_qty,
     unit: row.unit,
     unitPrice: row.unit_price,
-    recipe: row.recipe || undefined,
+    recipe,
+    usarComoInsumo,
     barcode: row.barcode || undefined,
   };
 }
@@ -256,10 +268,10 @@ function updateIngredientSelects() {
     const currentValue = select.value;
     select.innerHTML = '<option value="">Selecione um insumo</option>';
     state.products.forEach(product => {
-      if (product.type === 'insumo') {
+      if (product.type === 'insumo' || (product.type === 'venda' && product.usarComoInsumo)) {
         const option = document.createElement('option');
         option.value = product.name;
-        option.textContent = product.name;
+        option.textContent = product.name + (product.usarComoInsumo && product.type === 'venda' ? ' (prod.)' : '');
         select.appendChild(option);
       }
     });
@@ -272,26 +284,38 @@ function renderProducts() {
   state.products.forEach(product => {
     const row = document.createElement('tr');
     const typeLabel = product.type === 'venda' ? 'Item de Venda' : product.type === 'insumo' ? 'Insumos' : '-';
+    const insumoBtn = product.type === 'venda'
+      ? `<button type="button" class="btn-secondary toggle-insumo-btn${product.usarComoInsumo ? ' btn-insumo-active' : ''}" data-id="${product.id}" title="Marcar como ingrediente disponível em fichas técnicas">${product.usarComoInsumo ? 'Insumo ✓' : 'Usar como Insumo'}</button>`
+      : '';
     row.innerHTML = `
-      <td>${typeLabel}</td>
+      <td>${typeLabel}${product.usarComoInsumo ? ' <span class="badge-insumo">+Insumo</span>' : ''}</td>
       <td>${product.name}</td>
       <td>${product.supplier || '-'}</td>
       <td>${product.packageQty ?? '-'}</td>
       <td>${product.unit || '-'}</td>
       <td>${formatMoney(product.unitPrice)}</td>
       <td>
+        ${insumoBtn}
         <button type="button" class="btn-secondary edit-product-btn" data-id="${product.id}">Editar</button>
         <button type="button" class="btn-secondary delete-product-btn" data-id="${product.id}">Excluir</button>
       </td>
     `;
-    row.querySelector('.edit-product-btn').addEventListener('click', () => {
-      startProductEdit(product.id);
-    });
-    row.querySelector('.delete-product-btn').addEventListener('click', () => {
-      deleteProduct(product.id);
-    });
+    if (product.type === 'venda') {
+      row.querySelector('.toggle-insumo-btn').addEventListener('click', () => toggleProductAsInsumo(product.id));
+    }
+    row.querySelector('.edit-product-btn').addEventListener('click', () => startProductEdit(product.id));
+    row.querySelector('.delete-product-btn').addEventListener('click', () => deleteProduct(product.id));
     elements.productsTable.appendChild(row);
   });
+}
+
+async function toggleProductAsInsumo(id) {
+  const product = state.products.find(p => p.id === id);
+  if (!product) return;
+  product.usarComoInsumo = !product.usarComoInsumo;
+  await saveProductToDb(product);
+  renderProducts();
+  updateIngredientSelects();
 }
 
 function renderRecipeProducts() {
