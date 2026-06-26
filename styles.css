@@ -1100,24 +1100,45 @@ tbody tr:hover { background: #fff8e6; }
   border-bottom: 1px solid var(--border);
 }
 
-.dre-col-header {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  padding: 4px 18px 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
+.dre-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 600px;
 }
-.dre-col-header span:not(:first-child) { text-align: right; min-width: 90px; }
+.dre-tr-head th {
+  background: #1a1208;
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.dre-tr-head th.dre-td-num, .dre-tr-head th.dre-td-pct { text-align: right; }
+.dre-td-num { text-align: right; font-weight: 600; white-space: nowrap; padding: 8px 12px; }
+.dre-td-pct { text-align: right; color: var(--muted); font-size: 0.78rem; padding: 8px 8px 8px 0; white-space: nowrap; }
+.dre-t-pos  { color: #2d8653; }
+.dre-t-neg  { color: #cc1515; }
+.dre-arrow  { color: var(--muted); margin-right: 4px; }
+
+.dre-tr-sec td {
+  padding: 7px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dre-tr-item td { padding: 7px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+.dre-tr-item:hover td { background: var(--surface-strong); }
+.dre-tr-total td { padding: 8px 12px; font-weight: 700; background: var(--surface-strong); border-top: 2px solid var(--border); }
+.dre-tr-lb td { padding: 10px 12px; font-weight: 800; background: var(--bg); font-size: 0.9rem; }
+.dre-tr-margin td { padding: 3px 14px 8px; font-size: 0.78rem; color: var(--muted); border-bottom: 1px solid var(--border); }
+.dre-tr-result td { padding: 12px 12px; font-weight: 800; font-size: 0.95rem; background: var(--surface-strong); }
 
 .dre-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 9px 18px;
