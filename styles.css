@@ -22,6 +22,75 @@
   --menu-width: 240px;
 }
 
+/* ── EXPORTAR PDF ── */
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.section-title-row h2 { margin: 0; }
+
+.btn-pdf {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--accent-red);
+  background: transparent;
+  color: var(--accent-red);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-pdf:hover { background: var(--accent-red); color: #fff; }
+
+@media print {
+  /* Ocultar tudo por padrão */
+  body.printing * { visibility: hidden !important; }
+
+  /* Mostrar só o alvo */
+  body.printing .print-target { visibility: visible !important; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+  body.printing .print-target * { visibility: visible !important; }
+
+  /* Ocultar botões e ações dentro do alvo */
+  .no-print, .btn-pdf, .btn-primary, .btn-secondary,
+  .dash-quick-btns, .dash-filter-bar { display: none !important; }
+
+  /* Cabeçalho da empresa no topo */
+  body.printing .print-target::before {
+    content: 'BROWNIE DO KBBSA — Sistema de Gestão';
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1a1208;
+    border-bottom: 2px solid #FFD900;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  }
+
+  /* Dashboard: compactar gráficos */
+  .chart-wrap { height: 160px !important; }
+  .chart-wrap-sm { height: 140px !important; }
+  .dashboard-cards { grid-template-columns: repeat(6, 1fr) !important; }
+  .kpi-value { font-size: 1rem !important; }
+  .dash-section-title { margin: 12px 0 8px !important; }
+  .list-card { padding: 10px 14px !important; margin-bottom: 10px !important; }
+
+  /* Remover sombras e bordas desnecessárias */
+  * { box-shadow: none !important; }
+
+  /* Cores para impressão */
+  body { background: #fff !important; color: #000 !important; }
+  .pe-progress-fill.pe-ok     { background: #2d8653 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pe-progress-fill.pe-warn   { background: #e8a020 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pe-progress-fill.pe-danger { background: #cc1515 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .dashboard-card { border: 1px solid #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .dash-section-title { background: #1a1208 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* Forçar tema claro mesmo com dark mode no sistema (Android/iOS) */
 @media (prefers-color-scheme: dark) {
   :root {

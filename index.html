@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
 
@@ -409,7 +409,10 @@
     </section>
 
     <section id="custos" class="card-section">
-      <h2>Custos Fixos e Variáveis</h2>
+      <div class="section-title-row">
+        <h2>Custos Fixos e Variáveis</h2>
+        <button type="button" class="btn-pdf" onclick="exportPDF('dre')">📄 Exportar DRE PDF</button>
+      </div>
 
       <div class="list-card">
         <h3>Lançar custo</h3>
@@ -460,72 +463,77 @@
         </form>
       </div>
 
-      <div class="list-card">
-        <div class="chart-header">
-          <h3>DRE — Demonstração do Resultado</h3>
-          <div class="chart-controls">
-            <label for="dreMonth">Mês:</label>
-            <select id="dreMonth">
-              <option value="1">Janeiro</option>
-              <option value="2">Fevereiro</option>
-              <option value="3">Março</option>
-              <option value="4">Abril</option>
-              <option value="5">Maio</option>
-              <option value="6">Junho</option>
-              <option value="7">Julho</option>
-              <option value="8">Agosto</option>
-              <option value="9">Setembro</option>
-              <option value="10">Outubro</option>
-              <option value="11">Novembro</option>
-              <option value="12">Dezembro</option>
-            </select>
-            <label for="dreYear">Ano:</label>
-            <select id="dreYear"></select>
+      <div id="drePrintArea">
+        <div class="list-card">
+          <div class="chart-header">
+            <h3>DRE — Demonstração do Resultado</h3>
+            <div class="chart-controls">
+              <label for="dreMonth">Mês:</label>
+              <select id="dreMonth">
+                <option value="1">Janeiro</option>
+                <option value="2">Fevereiro</option>
+                <option value="3">Março</option>
+                <option value="4">Abril</option>
+                <option value="5">Maio</option>
+                <option value="6">Junho</option>
+                <option value="7">Julho</option>
+                <option value="8">Agosto</option>
+                <option value="9">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+              <label for="dreYear">Ano:</label>
+              <select id="dreYear"></select>
+            </div>
           </div>
+          <div id="drePanel"></div>
         </div>
-        <div id="drePanel"></div>
-      </div>
 
-      <div class="list-card">
-        <div class="chart-header">
-          <h3>Custos lançados</h3>
-          <div class="chart-controls">
-            <label>Mês:</label>
-            <select id="costsFilterMonth">
-              <option value="1">Janeiro</option>
-              <option value="2">Fevereiro</option>
-              <option value="3">Março</option>
-              <option value="4">Abril</option>
-              <option value="5">Maio</option>
-              <option value="6">Junho</option>
-              <option value="7">Julho</option>
-              <option value="8">Agosto</option>
-              <option value="9">Setembro</option>
-              <option value="10">Outubro</option>
-              <option value="11">Novembro</option>
-              <option value="12">Dezembro</option>
-            </select>
-            <label>Ano:</label>
-            <select id="costsFilterYear"></select>
+        <div class="list-card">
+          <div class="chart-header">
+            <h3>Custos lançados</h3>
+            <div class="chart-controls">
+              <label>Mês:</label>
+              <select id="costsFilterMonth">
+                <option value="1">Janeiro</option>
+                <option value="2">Fevereiro</option>
+                <option value="3">Março</option>
+                <option value="4">Abril</option>
+                <option value="5">Maio</option>
+                <option value="6">Junho</option>
+                <option value="7">Julho</option>
+                <option value="8">Agosto</option>
+                <option value="9">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+              <label>Ano:</label>
+              <select id="costsFilterYear"></select>
+            </div>
           </div>
+          <table id="costsTable">
+            <thead>
+              <tr>
+                <th>Mês/Ano</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Valor</th>
+                <th class="no-print">Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <table id="costsTable">
-          <thead>
-            <tr>
-              <th>Mês/Ano</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Valor</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
       </div>
     </section>
 
     <section id="dashboard" class="card-section dashboard-section">
-      <h2>Dashboard BI</h2>
+      <div class="section-title-row">
+        <h2>Dashboard BI</h2>
+        <button type="button" class="btn-pdf" onclick="exportPDF('dashboard')">📄 Exportar PDF</button>
+      </div>
 
       <!-- Filtros + Atalhos de Período -->
       <div class="dash-filter-bar">
@@ -751,7 +759,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=6" defer></script>
 </body>
 </html>
 

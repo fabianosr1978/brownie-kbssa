@@ -2092,6 +2092,31 @@ async function handleLogout() {
   showLogin();
 }
 
+function exportPDF(mode) {
+  const targetId = mode === 'dre' ? 'drePrintArea' : 'dashboard';
+  const orientation = mode === 'dre' ? 'portrait' : 'landscape';
+  const target = document.getElementById(targetId);
+  if (!target) return;
+
+  const styleEl = document.createElement('style');
+  styleEl.id = 'pdf-print-style';
+  styleEl.textContent = `@page { size: A4 ${orientation}; margin: 8mm; }`;
+  document.head.appendChild(styleEl);
+
+  target.classList.add('print-target');
+  document.body.classList.add('printing');
+
+  const cleanup = () => {
+    target.classList.remove('print-target');
+    document.body.classList.remove('printing');
+    const s = document.getElementById('pdf-print-style');
+    if (s) s.remove();
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+}
+
 let appInitialized = false;
 
 async function initialize() {
