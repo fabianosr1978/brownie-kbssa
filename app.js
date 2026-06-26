@@ -1860,71 +1860,110 @@ function renderDRE() {
   const totalVariavel = variavelList.reduce((sum, c) => sum + c.value, 0);
 
   const lucroBruto = receitaBruta - cmvTotal;
-  const margemBruta = receitaBruta > 0 ? (lucroBruto / receitaBruta * 100) : 0;
   const resultadoOperacional = lucroBruto - totalFixo - totalVariavel;
-
   const tributos = costsOfMonth('tributos').reduce((sum, c) => sum + c.value, 0);
   const prolabore = costsOfMonth('prolabore').reduce((sum, c) => sum + c.value, 0);
   const resultadoLiquido = resultadoOperacional - tributos - prolabore;
 
   const monthName = new Date(year, month - 1, 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-  const cls = v => v >= 0 ? 'dre-pos' : 'dre-neg';
+  const cls  = v => v >= 0 ? 'dre-pos' : 'dre-neg';
+  const pct  = v => receitaBruta > 0 ? (v / receitaBruta * 100).toFixed(1) + '%' : '—';
+  const row  = (label, value, extraClass = '') =>
+    `<div class="dre-row${extraClass ? ' '+extraClass : ''}">
+       <span class="dre-label">${label}</span>
+       <span class="dre-value ${cls(value)}">${formatMoney(value)}</span>
+       <span class="dre-pct">${pct(value)}</span>
+     </div>`;
+  const detailRow = (label, value) =>
+    `<div class="dre-row dre-detail">
+       <span class="dre-label">• ${label}</span>
+       <span class="dre-value">${formatMoney(value)}</span>
+       <span class="dre-pct">${pct(value)}</span>
+     </div>`;
+  const subtotal = (label, value) =>
+    `<div class="dre-row dre-subtotal">
+       <span class="dre-label">${label}</span>
+       <span class="dre-value ${cls(value)}">${formatMoney(value)}</span>
+       <span class="dre-pct dre-pct-bold">${pct(value)}</span>
+     </div>`;
 
-  const detailRows = (items) => items.map(c =>
-    `<div class="dre-row dre-detail"><span class="dre-label">• ${c.name}</span><span class="dre-value">${formatMoney(c.value)}</span></div>`
-  ).join('');
+  const resColor = resultadoLiquido >= 0 ? '#2d8653' : '#cc1515';
+  const ebitdaColor = resultadoOperacional >= 0 ? '#1a7bb0' : '#cc1515';
+
+  const kpiPanel = `
+    <div class="dre-kpi-panel">
+      <div class="dre-kpi-card" style="border-left-color:#2d8653">
+        <div class="dre-kpi-icon" style="background:#e8f7f0;color:#2d8653">📈</div>
+        <div class="dre-kpi-info">
+          <div class="dre-kpi-label">Receita Bruta</div>
+          <div class="dre-kpi-value" style="color:#2d8653">${formatMoney(receitaBruta)}</div>
+          <div class="dre-kpi-pct">100% referência</div>
+        </div>
+      </div>
+      <div class="dre-kpi-card" style="border-left-color:#e07b30">
+        <div class="dre-kpi-icon" style="background:#fef3e8;color:#e07b30">📦</div>
+        <div class="dre-kpi-info">
+          <div class="dre-kpi-label">CMV</div>
+          <div class="dre-kpi-value" style="color:#e07b30">${formatMoney(cmvTotal)}</div>
+          <div class="dre-kpi-pct">${pct(cmvTotal)} da receita</div>
+        </div>
+      </div>
+      <div class="dre-kpi-card" style="border-left-color:#2d8653">
+        <div class="dre-kpi-icon" style="background:#e8f7f0;color:#2d8653">💰</div>
+        <div class="dre-kpi-info">
+          <div class="dre-kpi-label">Lucro Bruto</div>
+          <div class="dre-kpi-value" style="color:${lucroBruta >= 0 ? '#2d8653' : '#cc1515'}">${formatMoney(lucroBruto)}</div>
+          <div class="dre-kpi-pct">${pct(lucroBruto)} da receita</div>
+        </div>
+      </div>
+      <div class="dre-kpi-card" style="border-left-color:${ebitdaColor}">
+        <div class="dre-kpi-icon" style="background:#e8f3fb;color:${ebitdaColor}">📊</div>
+        <div class="dre-kpi-info">
+          <div class="dre-kpi-label">EBITDA</div>
+          <div class="dre-kpi-value" style="color:${ebitdaColor}">${formatMoney(resultadoOperacional)}</div>
+          <div class="dre-kpi-pct">${pct(resultadoOperacional)} da receita</div>
+        </div>
+      </div>
+      <div class="dre-kpi-card" style="border-left-color:${resColor}">
+        <div class="dre-kpi-icon" style="background:${resultadoLiquido >= 0 ? '#e8f7f0' : '#fde8e8'};color:${resColor}">💼</div>
+        <div class="dre-kpi-info">
+          <div class="dre-kpi-label">Resultado Final</div>
+          <div class="dre-kpi-value" style="color:${resColor}">${formatMoney(resultadoLiquido)}</div>
+          <div class="dre-kpi-pct">${pct(resultadoLiquido)} da receita</div>
+        </div>
+      </div>
+    </div>`;
 
   elements.drePanel.innerHTML = `
+    ${kpiPanel}
     <div class="dre-container">
       <div class="dre-period">${monthName}</div>
+      <div class="dre-col-header">
+        <span></span><span>Valor</span><span>% Receita</span>
+      </div>
 
       <div class="dre-section-title">RECEITA</div>
-      <div class="dre-row">
-        <span class="dre-label">(+) Receita Bruta de Vendas</span>
-        <span class="dre-value ${cls(receitaBruta)}">${formatMoney(receitaBruta)}</span>
-      </div>
-      <div class="dre-row">
-        <span class="dre-label">(−) CMV — Custo das Mercadorias</span>
-        <span class="dre-value dre-neg">${formatMoney(cmvTotal)}</span>
-      </div>
-      ${cmvAuto > 0 ? `<div class="dre-row dre-detail"><span class="dre-label">• Auto (fichas técnicas)</span><span class="dre-value">${formatMoney(cmvAuto)}</span></div>` : ''}
-      ${detailRows(cmvManualList)}
-      <div class="dre-row dre-subtotal">
-        <span class="dre-label">(=) LUCRO BRUTO</span>
-        <span class="dre-value ${cls(lucroBruto)}">${formatMoney(lucroBruto)}</span>
-        <span class="dre-margin">${margemBruta.toFixed(1)}%</span>
-      </div>
+      ${row('(+) Receita Bruta de Vendas', receitaBruta)}
+      ${row('(−) CMV — Custo das Mercadorias', -cmvTotal, 'dre-neg-row')}
+      ${cmvAuto > 0 ? detailRow('Auto (fichas técnicas)', cmvAuto) : ''}
+      ${cmvManualList.map(c => detailRow(c.name, c.value)).join('')}
+      ${subtotal('(=) LUCRO BRUTO', lucroBruto)}
 
       <div class="dre-section-title">DESPESAS OPERACIONAIS</div>
-      <div class="dre-row">
-        <span class="dre-label">(−) Custos Fixos</span>
-        <span class="dre-value dre-neg">${formatMoney(totalFixo)}</span>
-      </div>
-      ${detailRows(fixoList)}
-      <div class="dre-row">
-        <span class="dre-label">(−) Custos Variáveis</span>
-        <span class="dre-value dre-neg">${formatMoney(totalVariavel)}</span>
-      </div>
-      ${detailRows(variavelList)}
-      <div class="dre-row dre-subtotal">
-        <span class="dre-label">(=) RESULTADO OPERACIONAL</span>
-        <span class="dre-value ${cls(resultadoOperacional)}">${formatMoney(resultadoOperacional)}</span>
-      </div>
+      ${row('(−) Custos Fixos', -totalFixo, 'dre-neg-row')}
+      ${fixoList.map(c => detailRow(c.name, c.value)).join('')}
+      ${row('(−) Custos Variáveis', -totalVariavel, 'dre-neg-row')}
+      ${variavelList.map(c => detailRow(c.name, c.value)).join('')}
+      ${subtotal('(=) EBITDA / RESULTADO OPERACIONAL', resultadoOperacional)}
 
       <div class="dre-section-title">DEDUÇÕES</div>
-      <div class="dre-row">
-        <span class="dre-label">(−) Tributos / Impostos</span>
-        <span class="dre-value dre-neg">${formatMoney(tributos)}</span>
-      </div>
-      <div class="dre-row">
-        <span class="dre-label">(−) Pró-labore</span>
-        <span class="dre-value dre-neg">${formatMoney(prolabore)}</span>
-      </div>
+      ${row('(−) Tributos / Impostos', -tributos, 'dre-neg-row')}
+      ${row('(−) Pró-labore', -prolabore, 'dre-neg-row')}
 
       <div class="dre-row dre-result ${resultadoLiquido >= 0 ? 'dre-lucro' : 'dre-prejuizo'}">
         <span class="dre-label">(=) RESULTADO LÍQUIDO</span>
         <span class="dre-value">${formatMoney(resultadoLiquido)}</span>
-        <span class="dre-margin">${resultadoLiquido >= 0 ? '✓ Lucro' : '✗ Prejuízo'}</span>
+        <span class="dre-pct dre-pct-bold">${pct(resultadoLiquido)} ${resultadoLiquido >= 0 ? '✓' : '✗'}</span>
       </div>
     </div>
   `;
