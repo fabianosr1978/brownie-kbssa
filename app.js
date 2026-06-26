@@ -969,6 +969,70 @@ function _oldDrawMonthlySalesChart() {
   }
 }
 
+function updatePontoEquilibrio(year, month, totalSales, cmvTotal, costsF) {
+  const sumCat = cat => costsF.filter(c => c.category === cat).reduce((s, c) => s + c.value, 0);
+  const fixedCosts = sumCat('fixo') + sumCat('prolabore') + sumCat('tributos');
+
+  // Margem bruta: usa período atual; se sem vendas, tenta o ano todo
+  let marginPct = 0;
+  if (totalSales > 0) {
+    marginPct = Math.max(0, (totalSales - cmvTotal) / totalSales);
+  } else {
+    const allSales = state.sales.filter(s => s.date && parseInt(s.date.substring(0,4)) === year);
+    const allRev = allSales.reduce((s, v) => s + (v.total||0), 0);
+    let allCmv = 0;
+    allSales.forEach(s => { const p = state.products.find(pr => pr.id === s.productId); if (p?.recipe?.unitCost) allCmv += p.recipe.unitCost * s.quantity; });
+    marginPct = allRev > 0 ? Math.max(0, (allRev - allCmv) / allRev) : 0;
+  }
+
+  const peValue = fixedCosts > 0 && marginPct > 0 ? fixedCosts / marginPct : 0;
+
+  // PE em unidades: usa ticket médio por unidade do período ou do ano
+  const filtered = getFilteredSalesDash();
+  const totalQty = filtered.reduce((s, v) => s + (v.quantity||0), 0);
+  const avgUnit  = totalQty > 0 ? totalSales / totalQty : (() => {
+    const allS = state.sales.filter(s => s.date && parseInt(s.date.substring(0,4)) === year);
+    const ar = allS.reduce((s,v)=>s+(v.total||0),0), aq = allS.reduce((s,v)=>s+(v.quantity||0),0);
+    return aq > 0 ? ar / aq : 0;
+  })();
+  const peQty = peValue > 0 && avgUnit > 0 ? Math.ceil(peValue / avgUnit) : 0;
+
+  const falta = peValue - totalSales;
+  const progressPct = peValue > 0 ? Math.min(totalSales / peValue * 100, 100) : 0;
+  const progressClass = progressPct >= 100 ? 'pe-ok' : progressPct >= 70 ? 'pe-warn' : 'pe-danger';
+
+  const el = id => document.getElementById(id);
+  if (el('pePeValue')) el('pePeValue').textContent = peValue > 0 ? formatMoney(peValue) : '—';
+  if (el('pePeQty'))   el('pePeQty').textContent   = peQty > 0 ? peQty + ' unid.' : '—';
+
+  const faltaEl = el('peFalta');
+  if (faltaEl) {
+    if (peValue === 0) { faltaEl.textContent = '—'; faltaEl.style.color = ''; }
+    else if (falta > 0) { faltaEl.textContent = '−' + formatMoney(falta); faltaEl.style.color = 'var(--accent-red)'; }
+    else { faltaEl.textContent = '+' + formatMoney(-falta); faltaEl.style.color = 'var(--success,#2d8653)'; }
+  }
+
+  const fillEl = el('peProgressFill');
+  if (fillEl) { fillEl.style.width = progressPct.toFixed(1) + '%'; fillEl.className = 'pe-progress-fill ' + progressClass; }
+
+  const labelEl = el('peProgressLabel');
+  if (labelEl) labelEl.textContent = peValue > 0
+    ? `Receita atual: ${formatMoney(totalSales)} de ${formatMoney(peValue)} necessários`
+    : 'Lance custos fixos em Custos & DRE para calcular.';
+
+  const pctEl = el('peProgressPct');
+  if (pctEl) {
+    pctEl.textContent = peValue > 0 ? progressPct.toFixed(1) + '%' : '';
+    pctEl.style.color = progressPct >= 100 ? 'var(--success,#2d8653)' : progressPct >= 70 ? '#d4900a' : 'var(--accent-red)';
+  }
+
+  const subEl = el('peSubtitle');
+  if (subEl) {
+    if (fixedCosts === 0) subEl.textContent = 'Lance custos fixos em Custos & DRE para calcular.';
+    else subEl.textContent = `Custos fixos: ${formatMoney(fixedCosts)} | Margem bruta: ${(marginPct*100).toFixed(1)}%`;
+  }
+}
+
 function renderDashboard() {
   const year = getDashYear();
   const month = getDashMonth();
@@ -1014,6 +1078,8 @@ function renderDashboard() {
 
   const resPctEl = el('dashKpiResultPct');
   if (resPctEl) resPctEl.textContent = resultadoPct.toFixed(1) + '% da receita';
+
+  updatePontoEquilibrio(year, month, totalSales, cmvTotal, costsF);
 
   populateChartYears();
   populateDashProductOptions();

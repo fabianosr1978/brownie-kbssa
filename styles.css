@@ -554,6 +554,29 @@ tbody tr:hover { background: #fff8e6; }
 }
 .dash-quick-btn:hover { background: var(--primary); color: var(--menu-text); }
 
+/* Ponto de Equilíbrio */
+.pe-card { margin-bottom: 20px; }
+.pe-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.pe-subtitle { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.pe-kpis { display: flex; gap: 28px; flex-wrap: wrap; }
+.pe-kpi { display: flex; flex-direction: column; align-items: flex-end; }
+.pe-kpi-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 3px; }
+.pe-kpi-val { font-size: 1.15rem; font-weight: 800; color: var(--text); }
+.pe-progress-track { height: 16px; background: var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.pe-progress-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; min-width: 4px; }
+.pe-progress-fill.pe-ok     { background: var(--success, #2d8653); }
+.pe-progress-fill.pe-warn   { background: #e8a020; }
+.pe-progress-fill.pe-danger { background: var(--accent-red); }
+.pe-progress-info { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+.pe-pct { font-weight: 700; }
+
 /* Section dividers */
 .dash-section-title {
   font-size: 0.72rem;
