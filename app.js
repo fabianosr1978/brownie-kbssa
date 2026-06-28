@@ -1283,10 +1283,10 @@ function populateIngredientOptions(row) {
   const currentValue = select.value;
   select.innerHTML = '<option value="">Selecione um insumo</option>';
   state.products.forEach(product => {
-    if (product.type === 'insumo') {
+    if (product.type === 'insumo' || (product.type === 'venda' && product.usarComoInsumo)) {
       const option = document.createElement('option');
       option.value = product.name;
-      option.textContent = product.name;
+      option.textContent = product.name + (product.usarComoInsumo && product.type === 'venda' ? ' (prod.)' : '');
       select.appendChild(option);
     }
   });
