@@ -294,6 +294,7 @@ function renderProducts() {
       <td>${product.packageQty ?? '-'}</td>
       <td>${product.unit || '-'}</td>
       <td>${formatMoney(product.unitPrice)}</td>
+      <td>${product.recipe?.unitCost != null ? `<span class="custo-ficha">${formatMoney(product.recipe.unitCost)}<small>/${product.unit||'un'}</small></span>` : '<span style="color:var(--muted);font-size:0.8rem">—</span>'}</td>
       <td>
         ${insumoBtn}
         <button type="button" class="btn-secondary edit-product-btn" data-id="${product.id}">Editar</button>

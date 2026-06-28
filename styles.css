@@ -439,6 +439,17 @@ button, input, select { font: inherit; }
 }
 .btn-secondary:hover { border-color: var(--primary); background: var(--surface-strong); }
 
+.custo-ficha {
+  font-weight: 700;
+  color: #2d8653;
+}
+.custo-ficha small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-left: 2px;
+}
+
 .btn-insumo-active {
   border-color: #2d8653;
   background: #eaf7f0;
