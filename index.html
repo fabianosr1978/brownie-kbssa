@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=12" />
 </head>
 <body>
 
@@ -21,7 +21,7 @@
         </div>
         <div class="login-field">
           <label for="loginPassword">Senha</label>
-          <input id="loginPassword" type="password" placeholder="••••••••" required />
+          <input id="loginPassword" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required />
         </div>
         <p id="loginError" class="login-error"></p>
         <button type="submit" class="btn-primary login-btn">Entrar</button>
@@ -36,27 +36,27 @@
         <img src="Logo.png" alt="Logo Brownie do KBBSA" />
         <div class="brand-text">
           <h1>Brownie do KBBSA</h1>
-          <p>Sistema de controle de produtos, compras, vendas e inventário.</p>
+          <p>Sistema de controle de produtos, compras, vendas e inventÃ¡rio.</p>
         </div>
       </div>
       <nav class="side-nav">
-        <button data-target="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
-        <div class="nav-section-label">Gestão</div>
+        <button data-target="dashboard"><span class="nav-icon">ðŸ“Š</span> Dashboard</button>
+        <div class="nav-section-label">GestÃ£o</div>
         <div class="side-nav-group">
-          <button data-target="produtos" class="submenu-toggle"><span class="nav-icon">📋</span> Cadastros</button>
+          <button data-target="produtos" class="submenu-toggle"><span class="nav-icon">ðŸ“‹</span> Cadastros</button>
           <div class="side-submenu">
-            <button type="button" data-anchor="productPanel"><span class="nav-icon">🛍️</span> Produtos de Venda</button>
-            <button type="button" data-anchor="fichaPanel"><span class="nav-icon">📝</span> Ficha Técnica</button>
-            <button type="button" data-anchor="clientPanel"><span class="nav-icon">👥</span> Clientes</button>
+            <button type="button" data-anchor="productPanel"><span class="nav-icon">ðŸ›ï¸</span> Produtos de Venda</button>
+            <button type="button" data-anchor="fichaPanel"><span class="nav-icon">ðŸ“</span> Ficha TÃ©cnica</button>
+            <button type="button" data-anchor="clientPanel"><span class="nav-icon">ðŸ‘¥</span> Clientes</button>
           </div>
         </div>
-        <button data-target="compras"><span class="nav-icon">🛒</span> Compras de Insumos</button>
-        <button data-target="vendas"><span class="nav-icon">💰</span> Vendas</button>
-        <button data-target="inventario"><span class="nav-icon">📦</span> Inventário</button>
-        <button data-target="custos"><span class="nav-icon">📈</span> Custos & DRE</button>
-        <button data-target="planejamento"><span class="nav-icon">🛒</span> Plan. Compras</button>
+        <button data-target="compras"><span class="nav-icon">ðŸ›’</span> Compras de Insumos</button>
+        <button data-target="vendas"><span class="nav-icon">ðŸ’°</span> Vendas</button>
+        <button data-target="inventario"><span class="nav-icon">ðŸ“¦</span> InventÃ¡rio</button>
+        <button data-target="custos"><span class="nav-icon">ðŸ“ˆ</span> Custos & DRE</button>
+        <button data-target="planejamento"><span class="nav-icon">ðŸ›’</span> Plan. Compras</button>
         <div class="nav-bottom">
-          <button id="logoutBtn" class="logout-btn">⬅ Sair</button>
+          <button id="logoutBtn" class="logout-btn">â¬… Sair</button>
         </div>
       </nav>
     </aside>
@@ -97,15 +97,15 @@
                   <option value="Grama">Grama</option>
                   <option value="Kg">Kg</option>
                   <option value="Unidade">Unidade</option>
-                  <option value="Porção">Porção</option>
+                  <option value="PorÃ§Ã£o">PorÃ§Ã£o</option>
                 </select>
               </div>
               <div>
-                <label for="productUnitPrice">Valor unitário (R$)</label>
+                <label for="productUnitPrice">Valor unitÃ¡rio (R$)</label>
                 <input id="productUnitPrice" name="productUnitPrice" type="number" step="0.01" min="0" required />
               </div>
               <div>
-                <label for="productBarcode">Código de barras (opcional)</label>
+                <label for="productBarcode">CÃ³digo de barras (opcional)</label>
                 <input id="productBarcode" name="productBarcode" type="text" placeholder="EAN-13, EAN-8, UPC..." />
               </div>
               <div class="form-actions">
@@ -126,7 +126,7 @@
                   <th>Unidade</th>
                   <th>Valor unit.</th>
                   <th>Custo unit. (ficha)</th>
-                  <th>Ações</th>
+                  <th>AÃ§Ãµes</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -159,7 +159,7 @@
                 <tr>
                   <th>Nome</th>
                   <th>Local de venda</th>
-                  <th>Ações</th>
+                  <th>AÃ§Ãµes</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -169,7 +169,7 @@
 
         <div id="fichaPanel" class="panel hidden">
           <div class="recipe-card">
-            <h3>Ficha técnica</h3>
+            <h3>Ficha tÃ©cnica</h3>
             <form id="recipeForm" class="form-grid">
               <div>
                 <label for="recipeProduct">Produto</label>
@@ -190,7 +190,7 @@
                 <input id="recipePrepTime" name="recipePrepTime" type="number" step="1" min="0" />
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn-primary">Salvar ficha técnica</button>
+                <button type="submit" class="btn-primary">Salvar ficha tÃ©cnica</button>
               </div>
             </form>
 
@@ -205,7 +205,7 @@
                     <tr>
                       <th>Ingrediente</th>
                       <th>Marca / embalagem</th>
-                      <th>Preço embalagem</th>
+                      <th>PreÃ§o embalagem</th>
                       <th>Qtd embalagem</th>
                       <th>Qtd receita</th>
                       <th>Custo ingrediente</th>
@@ -217,16 +217,16 @@
               </div>
               <div class="recipe-summary">
                 <p><strong>Total de custo:</strong> <span id="recipeTotalCost">R$ 0,00</span></p>
-                <p><strong>Custo unitário por unidade:</strong> <span id="recipeUnitCost">R$ 0,00</span></p>
+                <p><strong>Custo unitÃ¡rio por unidade:</strong> <span id="recipeUnitCost">R$ 0,00</span></p>
               </div>
               <div class="list-card">
-                <h3>Fichas técnicas cadastradas</h3>
+                <h3>Fichas tÃ©cnicas cadastradas</h3>
                 <table id="recipeProductsTable">
                   <thead>
                     <tr>
                       <th>Produto</th>
-                      <th>Custo unitário</th>
-                      <th>Ações</th>
+                      <th>Custo unitÃ¡rio</th>
+                      <th>AÃ§Ãµes</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -244,14 +244,14 @@
       <div class="barcode-section">
         <div class="barcode-row">
           <div class="barcode-field-wrap">
-            <span class="barcode-icon">▦</span>
-            <input id="barcodeInput" type="text" placeholder="Escaneie ou digite o código de barras e pressione Enter..." class="barcode-input" autocomplete="off" />
+            <span class="barcode-icon">â–¦</span>
+            <input id="barcodeInput" type="text" placeholder="Escaneie ou digite o cÃ³digo de barras e pressione Enter..." class="barcode-input" autocomplete="off" />
           </div>
-          <button type="button" id="cameraScanBtn" class="btn-secondary">📷 Usar câmera</button>
+          <button type="button" id="cameraScanBtn" class="btn-secondary">ðŸ“· Usar cÃ¢mera</button>
         </div>
         <div id="scannerContainer" style="display:none">
           <div id="barcodeReader"></div>
-          <button type="button" id="stopScanBtn" class="btn-secondary" style="margin-top:8px">✕ Fechar câmera</button>
+          <button type="button" id="stopScanBtn" class="btn-secondary" style="margin-top:8px">âœ• Fechar cÃ¢mera</button>
         </div>
         <div id="scanResult" class="scan-result" style="display:none"></div>
       </div>
@@ -270,7 +270,7 @@
           <input id="purchaseQuantity" name="purchaseQuantity" type="number" step="0.001" min="0.001" placeholder="Ex: 800" required />
         </div>
         <div>
-          <label for="purchaseUnitValue">Valor por unidade (R$) <span class="field-hint">preço ÷ embalagem</span></label>
+          <label for="purchaseUnitValue">Valor por unidade (R$) <span class="field-hint">preÃ§o Ã· embalagem</span></label>
           <input id="purchaseUnitValue" name="purchaseUnitValue" type="number" step="0.0001" min="0" required />
         </div>
         <div>
@@ -297,7 +297,7 @@
               <th>Valor unit.</th>
               <th>Total</th>
               <th>Local</th>
-              <th>Ações</th>
+              <th>AÃ§Ãµes</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -327,7 +327,7 @@
           <input id="saleQuantity" name="saleQuantity" type="number" step="1" min="1" required />
         </div>
         <div>
-          <label for="saleUnitPrice">Valor unitário (R$)</label>
+          <label for="saleUnitPrice">Valor unitÃ¡rio (R$)</label>
           <input id="saleUnitPrice" name="saleUnitPrice" type="number" step="0.01" min="0" required />
         </div>
         <div>
@@ -350,7 +350,7 @@
               <th>Qtd</th>
               <th>Valor unit.</th>
               <th>Total</th>
-              <th>Ações</th>
+              <th>AÃ§Ãµes</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -359,7 +359,7 @@
     </section>
 
     <section id="inventario" class="card-section">
-      <h2>Inventário</h2>
+      <h2>InventÃ¡rio</h2>
 
       <div class="list-card">
         <div class="chart-header">
@@ -394,7 +394,7 @@
       </div>
 
       <div class="list-card">
-        <h3>Histórico de contagens</h3>
+        <h3>HistÃ³rico de contagens</h3>
         <table id="inventoryHistoryTable">
           <thead>
             <tr>
@@ -411,20 +411,20 @@
 
     <section id="custos" class="card-section">
       <div class="section-title-row">
-        <h2>Custos Fixos e Variáveis</h2>
-        <button type="button" class="btn-pdf" onclick="exportPDF('dre')">📄 Exportar DRE PDF</button>
+        <h2>Custos Fixos e VariÃ¡veis</h2>
+        <button type="button" class="btn-pdf" onclick="exportPDF('dre')">ðŸ“„ Exportar DRE PDF</button>
       </div>
 
       <div class="list-card">
-        <h3>Lançar custo</h3>
+        <h3>LanÃ§ar custo</h3>
         <form id="costForm" class="form-grid">
           <input id="costId" type="hidden" />
           <div>
-            <label for="costMonth">Mês</label>
+            <label for="costMonth">MÃªs</label>
             <select id="costMonth" required>
               <option value="1">Janeiro</option>
               <option value="2">Fevereiro</option>
-              <option value="3">Março</option>
+              <option value="3">MarÃ§o</option>
               <option value="4">Abril</option>
               <option value="5">Maio</option>
               <option value="6">Junho</option>
@@ -441,17 +441,17 @@
             <input id="costYear" type="number" min="2024" max="2035" required />
           </div>
           <div>
-            <label for="costName">Descrição</label>
+            <label for="costName">DescriÃ§Ã£o</label>
             <input id="costName" type="text" placeholder="Ex: Conta de luz" required />
           </div>
           <div>
             <label for="costCategory">Categoria</label>
             <select id="costCategory" required>
               <option value="fixo">Custo Fixo</option>
-              <option value="variavel">Custo Variável</option>
+              <option value="variavel">Custo VariÃ¡vel</option>
               <option value="cmv">CMV (Mercadorias)</option>
               <option value="tributos">Tributos / Impostos</option>
-              <option value="prolabore">Pró-labore</option>
+              <option value="prolabore">PrÃ³-labore</option>
             </select>
           </div>
           <div>
@@ -459,7 +459,7 @@
             <input id="costValue" type="number" step="0.01" min="0" required />
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn-primary">Lançar custo</button>
+            <button type="submit" class="btn-primary">LanÃ§ar custo</button>
           </div>
         </form>
       </div>
@@ -467,13 +467,13 @@
       <div id="drePrintArea">
         <div class="list-card">
           <div class="chart-header">
-            <h3>DRE — Demonstração do Resultado</h3>
+            <h3>DRE â€” DemonstraÃ§Ã£o do Resultado</h3>
             <div class="chart-controls">
-              <label for="dreMonth">Mês:</label>
+              <label for="dreMonth">MÃªs:</label>
               <select id="dreMonth">
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
-                <option value="3">Março</option>
+                <option value="3">MarÃ§o</option>
                 <option value="4">Abril</option>
                 <option value="5">Maio</option>
                 <option value="6">Junho</option>
@@ -486,7 +486,7 @@
               </select>
               <label for="dreYear">Ano:</label>
               <select id="dreYear"></select>
-              <button type="button" class="btn-delete-month" onclick="deleteCostMonth()" title="Excluir todos os custos do mês selecionado">🗑 Excluir mês</button>
+              <button type="button" class="btn-delete-month" onclick="deleteCostMonth()" title="Excluir todos os custos do mÃªs selecionado">ðŸ—‘ Excluir mÃªs</button>
             </div>
           </div>
           <div id="drePanel"></div>
@@ -494,13 +494,13 @@
 
         <div class="list-card">
           <div class="chart-header">
-            <h3>Custos lançados</h3>
+            <h3>Custos lanÃ§ados</h3>
             <div class="chart-controls">
-              <label>Mês:</label>
+              <label>MÃªs:</label>
               <select id="costsFilterMonth">
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
-                <option value="3">Março</option>
+                <option value="3">MarÃ§o</option>
                 <option value="4">Abril</option>
                 <option value="5">Maio</option>
                 <option value="6">Junho</option>
@@ -518,11 +518,11 @@
           <table id="costsTable">
             <thead>
               <tr>
-                <th>Mês/Ano</th>
-                <th>Descrição</th>
+                <th>MÃªs/Ano</th>
+                <th>DescriÃ§Ã£o</th>
                 <th>Categoria</th>
                 <th>Valor</th>
-                <th class="no-print">Ações</th>
+                <th class="no-print">AÃ§Ãµes</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -534,21 +534,21 @@
     <section id="dashboard" class="card-section dashboard-section">
       <div class="section-title-row">
         <h2>Dashboard BI</h2>
-        <button type="button" class="btn-pdf" onclick="exportPDF('dashboard')">📄 Exportar PDF</button>
+        <button type="button" class="btn-pdf" onclick="exportPDF('dashboard')">ðŸ“„ Exportar PDF</button>
       </div>
 
-      <!-- Filtros + Atalhos de Período -->
+      <!-- Filtros + Atalhos de PerÃ­odo -->
       <div class="dash-filter-bar">
         <div class="dash-filter-top">
           <div class="chart-controls">
             <label>Ano:</label>
             <select id="chartYear"></select>
-            <label>Mês:</label>
+            <label>MÃªs:</label>
             <select id="dashMonth">
               <option value="0">Todos os meses</option>
               <option value="1">Janeiro</option>
               <option value="2">Fevereiro</option>
-              <option value="3">Março</option>
+              <option value="3">MarÃ§o</option>
               <option value="4">Abril</option>
               <option value="5">Maio</option>
               <option value="6">Junho</option>
@@ -569,8 +569,8 @@
             </select>
           </div>
           <div class="dash-quick-btns">
-            <button type="button" class="dash-quick-btn" data-quick="thisMonth">Este mês</button>
-            <button type="button" class="dash-quick-btn" data-quick="lastMonth">Mês anterior</button>
+            <button type="button" class="dash-quick-btn" data-quick="thisMonth">Este mÃªs</button>
+            <button type="button" class="dash-quick-btn" data-quick="lastMonth">MÃªs anterior</button>
             <button type="button" class="dash-quick-btn" data-quick="annual">Anual</button>
           </div>
         </div>
@@ -584,7 +584,7 @@
           <div class="kpi-sub" id="dashboardSalesCount">0 vendas</div>
         </div>
         <div class="dashboard-card kpi-card-ticket">
-          <div class="kpi-label">Ticket Médio</div>
+          <div class="kpi-label">Ticket MÃ©dio</div>
           <div class="kpi-value" id="dashboardTicketMedio">R$ 0,00</div>
           <div class="kpi-sub">por venda</div>
         </div>
@@ -596,39 +596,44 @@
         <div class="dashboard-card kpi-card-margem">
           <div class="kpi-label">Margem Bruta</div>
           <div class="kpi-value" id="dashboardMargemBruta">0%</div>
-          <div class="kpi-sub">Receita − CMV</div>
+          <div class="kpi-sub">Receita âˆ’ CMV</div>
         </div>
         <div class="dashboard-card kpi-card-compras">
           <div class="kpi-label">Total de Compras</div>
           <div class="kpi-value" id="dashboardPurchaseTotal">R$ 0,00</div>
-          <div class="kpi-sub">no período</div>
+          <div class="kpi-sub">no perÃ­odo</div>
         </div>
         <div class="dashboard-card" id="dashResultCard">
-          <div class="kpi-label">Resultado Líquido</div>
+          <div class="kpi-label">Resultado LÃ­quido</div>
           <div class="kpi-value" id="dashboardResultado">R$ 0,00</div>
           <div class="kpi-sub" id="dashKpiResultPct">0% da receita</div>
         </div>
+        <div class="dashboard-card kpi-card-vendidos">
+          <div class="kpi-label">Total Vendido</div>
+          <div class="kpi-value" id="dashboardTotalQty">0</div>
+          <div class="kpi-sub" id="dashboardTotalQtySub">unidades no perÃ­odo</div>
+        </div>
       </div>
 
-      <!-- Ponto de Equilíbrio -->
+      <!-- Ponto de EquilÃ­brio -->
       <div class="list-card pe-card">
         <div class="pe-top">
           <div>
-            <h3 style="margin:0 0 4px">Ponto de Equilíbrio</h3>
+            <h3 style="margin:0 0 4px">Ponto de EquilÃ­brio</h3>
             <p class="pe-subtitle" id="peSubtitle">Lance custos fixos em Custos &amp; DRE para calcular.</p>
           </div>
           <div class="pe-kpis">
             <div class="pe-kpi">
               <span class="pe-kpi-label">PE em Valor</span>
-              <span class="pe-kpi-val" id="pePeValue">—</span>
+              <span class="pe-kpi-val" id="pePeValue">â€”</span>
             </div>
             <div class="pe-kpi">
               <span class="pe-kpi-label">PE em Unidades</span>
-              <span class="pe-kpi-val" id="pePeQty">—</span>
+              <span class="pe-kpi-val" id="pePeQty">â€”</span>
             </div>
             <div class="pe-kpi">
               <span class="pe-kpi-label">Falta / Sobra</span>
-              <span class="pe-kpi-val" id="peFalta">—</span>
+              <span class="pe-kpi-val" id="peFalta">â€”</span>
             </div>
           </div>
         </div>
@@ -636,16 +641,16 @@
           <div class="pe-progress-fill pe-danger" id="peProgressFill" style="width:0%"></div>
         </div>
         <div class="pe-progress-info">
-          <span id="peProgressLabel">—</span>
+          <span id="peProgressLabel">â€”</span>
           <span class="pe-pct" id="peProgressPct">0%</span>
         </div>
       </div>
 
-      <!-- SEÇÃO: VENDAS -->
+      <!-- SEÃ‡ÃƒO: VENDAS -->
       <div class="dash-section-title">VENDAS</div>
 
       <div class="list-card chart-card">
-        <h3>Receita e Volume por Mês</h3>
+        <h3>Receita e Volume por MÃªs</h3>
         <div class="chart-wrap"><canvas id="salesByMonthChart"></canvas></div>
       </div>
 
@@ -673,20 +678,20 @@
         </table>
       </div>
 
-      <!-- SEÇÃO: FINANCEIRO -->
+      <!-- SEÃ‡ÃƒO: FINANCEIRO -->
       <div class="dash-section-title">FINANCEIRO</div>
 
       <div class="list-card chart-card">
-        <h3>DRE — Receita, Custos e Resultado por Mês</h3>
+        <h3>DRE â€” Receita, Custos e Resultado por MÃªs</h3>
         <div class="chart-wrap"><canvas id="dreByMonthChart"></canvas></div>
       </div>
 
-      <!-- SEÇÃO: COMPRAS -->
+      <!-- SEÃ‡ÃƒO: COMPRAS -->
       <div class="dash-section-title">COMPRAS</div>
 
       <div class="dash-row-2">
         <div class="list-card chart-card">
-          <h3>Compras por Mês (R$)</h3>
+          <h3>Compras por MÃªs (R$)</h3>
           <div class="chart-wrap chart-wrap-sm"><canvas id="purchasesByMonthChart"></canvas></div>
         </div>
         <div class="list-card chart-card">
@@ -695,11 +700,11 @@
         </div>
       </div>
 
-      <!-- SEÇÃO: INVENTÁRIO -->
-      <div class="dash-section-title">INVENTÁRIO</div>
+      <!-- SEÃ‡ÃƒO: INVENTÃRIO -->
+      <div class="dash-section-title">INVENTÃRIO</div>
 
       <div class="list-card chart-card">
-        <h3>Valor do Estoque por Mês — Acompanhamento</h3>
+        <h3>Valor do Estoque por MÃªs â€” Acompanhamento</h3>
         <div class="chart-wrap"><canvas id="inventoryByMonthChart"></canvas></div>
       </div>
     </section>
@@ -708,21 +713,21 @@
       <h2>Planejamento de Compras</h2>
 
       <div class="list-card">
-        <h3>Período de Análise</h3>
-        <p class="plan-hint">Saldo inicial (último inventário) + compras no período − consumo pelas vendas (fichas técnicas) = demanda de compra.</p>
+        <h3>PerÃ­odo de AnÃ¡lise</h3>
+        <p class="plan-hint">Saldo inicial (Ãºltimo inventÃ¡rio) + compras no perÃ­odo âˆ’ consumo pelas vendas (fichas tÃ©cnicas) = demanda de compra.</p>
         <div class="form-grid" style="max-width:480px">
           <div>
             <label for="planDateFrom">De</label>
             <input type="date" id="planDateFrom" />
           </div>
           <div>
-            <label for="planDateTo">Até</label>
+            <label for="planDateTo">AtÃ©</label>
             <input type="date" id="planDateTo" />
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
           <button type="button" class="btn-secondary plan-period-btn" data-period="week">Esta semana</button>
-          <button type="button" class="btn-secondary plan-period-btn" data-period="month">Este mês</button>
+          <button type="button" class="btn-secondary plan-period-btn" data-period="month">Este mÃªs</button>
           <button type="button" id="calcPlanBtn" class="btn-primary">Calcular</button>
         </div>
       </div>
@@ -737,7 +742,7 @@
                 <th>Insumo</th>
                 <th>Saldo Inicial</th>
                 <th>+ Compras</th>
-                <th>− Consumo</th>
+                <th>âˆ’ Consumo</th>
                 <th>= Saldo Atual</th>
                 <th>A Comprar</th>
                 <th>Unidade</th>
@@ -745,7 +750,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Selecione o período e clique em Calcular.</td></tr>
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Selecione o perÃ­odo e clique em Calcular.</td></tr>
             </tbody>
           </table>
         </div>
@@ -761,7 +766,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=11" defer></script>
+  <script src="app.js?v=12" defer></script>
 </body>
 </html>
 

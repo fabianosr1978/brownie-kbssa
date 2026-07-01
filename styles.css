@@ -583,12 +583,12 @@ tbody tr:hover { background: #fff8e6; }
 /* Dashboard BI */
 .dashboard-section .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
   margin-bottom: 24px;
 }
-@media (max-width: 1100px) { .dashboard-section .dashboard-cards { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 680px)  { .dashboard-section .dashboard-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .dashboard-section .dashboard-cards { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 700px)  { .dashboard-section .dashboard-cards { grid-template-columns: repeat(2, 1fr); } }
 
 .dashboard-card {
   background: var(--surface);
@@ -598,8 +598,9 @@ tbody tr:hover { background: #fff8e6; }
   border-top: 4px solid var(--primary);
   box-shadow: 0 2px 12px rgba(26,18,8,0.06);
 }
-.kpi-card-cmv   { border-top-color: var(--accent-red); }
-.kpi-card-margem { border-top-color: var(--success, #2d8653); }
+.kpi-card-cmv     { border-top-color: var(--accent-red); }
+.kpi-card-margem  { border-top-color: var(--success, #2d8653); }
+.kpi-card-vendidos { border-top-color: #2e6db0; }
 
 .kpi-label {
   font-size: 0.72rem;

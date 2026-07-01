@@ -1041,6 +1041,7 @@ function renderDashboard() {
 
   const totalSales    = filtered.reduce((sum, s) => sum + (s.total||0), 0);
   const numSales      = filtered.length;
+  const totalQty      = filtered.reduce((sum, s) => sum + (s.quantity||0), 0);
   const totalPurchases = state.purchases
     .filter(p => { if (!p.date) return false; const y=parseInt(p.date.substring(0,4)), m2=parseInt(p.date.substring(5,7)); return y===year && (month===0||m2===month); })
     .reduce((sum, p) => sum + (p.quantity*p.unitValue), 0);
@@ -1079,6 +1080,11 @@ function renderDashboard() {
 
   const resPctEl = el('dashKpiResultPct');
   if (resPctEl) resPctEl.textContent = resultadoPct.toFixed(1) + '% da receita';
+
+  const qtyEl = el('dashboardTotalQty');
+  if (qtyEl) qtyEl.textContent = totalQty.toLocaleString('pt-BR');
+  const qtySubEl = el('dashboardTotalQtySub');
+  if (qtySubEl) qtySubEl.textContent = totalQty === 1 ? 'unidade no período' : 'unidades no período';
 
   updatePontoEquilibrio(year, month, totalSales, cmvTotal, costsF);
 
