@@ -1810,6 +1810,20 @@ async function deleteCost(id) {
   renderDRE();
 }
 
+async function deleteCostMonth() {
+  const month = parseInt(document.getElementById('dreMonth')?.value);
+  const year  = parseInt(document.getElementById('dreYear')?.value);
+  if (!month || !year) return;
+  const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const label = `${MONTHS[month-1]}/${year}`;
+  if (!confirm(`Excluir TODOS os lançamentos de custos de ${label}?\n\nEssa ação não pode ser desfeita.`)) return;
+  const toDelete = state.costs.filter(c => c.month === month && c.year === year);
+  state.costs = state.costs.filter(c => !(c.month === month && c.year === year));
+  await Promise.all(toDelete.map(c => deleteCostFromDb(c.id)));
+  renderCosts();
+  renderDRE();
+}
+
 function renderCosts() {
   if (!elements.costsTable) return;
   const filterMonth = Number(elements.costsFilterMonth.value);
