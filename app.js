@@ -15,6 +15,12 @@ function productToDb(p) {
   } else if (recipe) {
     delete recipe.usarComoInsumo;
   }
+  if (p.weeklyGoal) {
+    recipe = recipe || {};
+    recipe.weeklyGoal = p.weeklyGoal;
+  } else if (recipe) {
+    delete recipe.weeklyGoal;
+  }
   return {
     id: p.id,
     type: p.type,
@@ -31,6 +37,7 @@ function productToDb(p) {
 function dbToProduct(row) {
   const rawRecipe = row.recipe;
   const usarComoInsumo = rawRecipe?.usarComoInsumo === true;
+  const weeklyGoal = rawRecipe?.weeklyGoal || null;
   const recipe = rawRecipe && (rawRecipe.ingredients || rawRecipe.unitCost != null || rawRecipe.yieldUnits)
     ? rawRecipe : undefined;
   return {
@@ -43,6 +50,7 @@ function dbToProduct(row) {
     unitPrice: row.unit_price,
     recipe,
     usarComoInsumo,
+    weeklyGoal,
     barcode: row.barcode || undefined,
   };
 }
@@ -154,6 +162,7 @@ const state = {
   inventoryHistory: [],
   clients: [],
   costs: [],
+  planMode: 'real',
 };
 
 let currentProductEditId = null;
@@ -1221,6 +1230,7 @@ function renderAll() {
   renderInventoryCountTable();
   renderInventoryHistory();
   renderDashboard();
+  renderPlanoVenda();
   updateProductOptions();
   updateClientOptions();
   renderCosts();
@@ -2230,6 +2240,11 @@ function calcularPlanejamento() {
   const dateTo   = document.getElementById('planDateTo')?.value;
   if (!dateFrom || !dateTo) { alert('Selecione o período de análise.'); return; }
 
+  if (state.planMode === 'plan') {
+    calcularPlanejamentoPorPlano(dateFrom, dateTo);
+    return;
+  }
+
   const summaryEl = document.getElementById('planSummaryText');
   let totalBuyCost = 0;
   let itemsToBuy = 0;
@@ -2278,6 +2293,103 @@ function calcularPlanejamento() {
     summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
     summaryEl.style.display = 'block';
   }
+}
+
+function calcularPlanejamentoPorPlano(dateFrom, dateTo) {
+  const from = new Date(dateFrom);
+  const to   = new Date(dateTo);
+  const days  = Math.max(1, Math.round((to - from) / (1000 * 60 * 60 * 24)) + 1);
+  const weeks = days / 7;
+
+  // Calculate planned ingredient consumption from weeklyGoal × weeks × recipe
+  const consumoPlano = {};
+  state.products
+    .filter(p => p.type === 'venda' && p.weeklyGoal && p.recipe?.ingredients?.length && p.recipe?.yieldUnits)
+    .forEach(sp => {
+      const plannedQty = sp.weeklyGoal * weeks;
+      sp.recipe.ingredients.forEach(ing => {
+        const qty = (ing.recipeQty / sp.recipe.yieldUnits) * plannedQty;
+        consumoPlano[ing.name] = (consumoPlano[ing.name] || 0) + qty;
+      });
+    });
+
+  let totalBuyCost = 0;
+  let itemsToBuy = 0;
+
+  document.querySelectorAll('#planResultTable tbody tr[data-product-id]').forEach(row => {
+    const product = state.products.find(p => p.id === row.dataset.productId);
+    if (!product) return;
+
+    const saldoInicial = Number(row.dataset.saldoInicial) || 0;
+    const consumo      = consumoPlano[product.name] || 0;
+    const necessidade  = saldoInicial - consumo;
+    const demanda      = Math.max(0, -necessidade);
+    const unitCost     = product.packageQty ? product.unitPrice / product.packageQty : 0;
+    const costEst      = demanda * unitCost;
+    if (demanda > 0) { totalBuyCost += costEst; itemsToBuy++; }
+
+    row.querySelector('.plan-compras').textContent = '—';
+    row.querySelector('.plan-consumo').textContent = consumo > 0 ? Math.round(consumo) : '—';
+    row.querySelector('.plan-saldo-atual').innerHTML = necessidade < 0
+      ? `<span style="color:var(--accent-red);font-weight:700">${Math.round(necessidade)}</span>`
+      : String(Math.round(necessidade));
+    row.querySelector('.plan-demanda').innerHTML = demanda > 0
+      ? `<span class="plan-status-buy">${Math.ceil(demanda)}</span>`
+      : '<span class="plan-status-ok">—</span>';
+    row.querySelector('.plan-custo').textContent = demanda > 0 && unitCost > 0 ? formatMoney(costEst) : '—';
+  });
+
+  const weeksLabel = Number.isInteger(weeks) ? weeks : weeks.toFixed(1);
+  const summaryEl = document.getElementById('planSummaryText');
+  if (summaryEl) {
+    summaryEl.textContent = itemsToBuy === 0
+      ? `✓ Estoque suficiente para ${weeksLabel} semana(s) conforme o plano!`
+      : `${itemsToBuy} insumo(s) para comprar (${weeksLabel} sem.). Custo estimado: ${formatMoney(totalBuyCost)}`;
+    summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
+    summaryEl.style.display = 'block';
+  }
+}
+
+function renderPlanoVenda() {
+  const tbody = document.querySelector('#planoVendaTable tbody');
+  if (!tbody) return;
+  const vendaProducts = state.products.filter(p => p.type === 'venda');
+  if (vendaProducts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">Nenhum produto de venda cadastrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  vendaProducts.forEach(p => {
+    const hasRecipe = !!(p.recipe?.ingredients?.length && p.recipe?.yieldUnits);
+    const tr = document.createElement('tr');
+    tr.dataset.productId = p.id;
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td><input type="number" class="plano-goal-input" value="${p.weeklyGoal || ''}" min="0" step="1" placeholder="0" /></td>
+      <td>${hasRecipe
+        ? '<span class="badge-ok">✓ Ficha cadastrada</span>'
+        : '<span style="color:var(--muted);font-size:0.85rem">Sem ficha técnica</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function savePlanoVenda() {
+  const rows = document.querySelectorAll('#planoVendaTable tbody tr[data-product-id]');
+  const updates = [];
+  rows.forEach(row => {
+    const productId = row.dataset.productId;
+    const input = row.querySelector('.plano-goal-input');
+    const goal  = input ? (parseFloat(input.value) || null) : null;
+    const product = state.products.find(p => p.id === productId);
+    if (product) {
+      product.weeklyGoal = goal;
+      updates.push(saveProductToDb(product));
+    }
+  });
+  await Promise.all(updates);
+  const btn = document.getElementById('savePlanoVendaBtn');
+  if (btn) { btn.textContent = '✓ Plano salvo!'; setTimeout(() => { btn.textContent = 'Salvar Plano'; }, 2000); }
 }
 
 function showLogin() {
@@ -2474,6 +2586,26 @@ async function initialize() {
     if (calcPlanBtn) calcPlanBtn.addEventListener('click', calcularPlanejamento);
     const planInvRefDate = document.getElementById('planInvRefDate');
     if (planInvRefDate) planInvRefDate.addEventListener('change', renderPlanejamento);
+    document.querySelectorAll('.plan-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.plan-mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.planMode = btn.dataset.mode;
+        const hintEl = document.getElementById('planModeHint');
+        if (state.planMode === 'plan') {
+          if (hintEl) hintEl.textContent = 'Saldo inicial − consumo baseado no Plano de Venda (meta semanal × semanas) = necessidade de compra.';
+          document.getElementById('planHeaderConsumo').textContent = '− Consumo (Plano)';
+          document.getElementById('planHeaderSaldo').textContent   = '= Necessidade';
+        } else {
+          if (hintEl) hintEl.textContent = 'Saldo inicial + compras no período − consumo real pelas vendas = demanda de compra.';
+          document.getElementById('planHeaderConsumo').textContent = '− Consumo';
+          document.getElementById('planHeaderSaldo').textContent   = '= Saldo Atual';
+        }
+        renderPlanejamento();
+      });
+    });
+    const savePlanoBtn = document.getElementById('savePlanoVendaBtn');
+    if (savePlanoBtn) savePlanoBtn.addEventListener('click', savePlanoVenda);
     document.querySelectorAll('.plan-period-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const range = btn.dataset.period === 'month' ? getPlanMonthRange() : getPlanWeekRange();

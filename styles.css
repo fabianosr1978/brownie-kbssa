@@ -1297,7 +1297,7 @@ tbody tr:hover { background: #fff8e6; }
 }
 
 .plan-inv-ref-row {
-  margin-bottom: 4px;
+  margin-bottom: 14px;
   padding: 12px 16px;
   background: #f9f7f0;
   border: 1px solid #e8e0cc;
@@ -1312,6 +1312,61 @@ tbody tr:hover { background: #fff8e6; }
 }
 .plan-ref-info {
   font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ── PLANO DE VENDA ── */
+.plan-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.plan-mode-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.plan-mode-toggle {
+  display: flex;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.plan-mode-btn {
+  padding: 6px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.plan-mode-btn + .plan-mode-btn {
+  border-left: 2px solid var(--border);
+}
+.plan-mode-btn.active {
+  background: var(--primary);
+  color: var(--text);
+}
+
+.plano-goal-input {
+  width: 100px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  text-align: center;
+}
+.badge-ok {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
