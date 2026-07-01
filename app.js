@@ -427,10 +427,22 @@ function renderInventoryHistory() {
 
   const countEntries = state.inventoryHistory.filter(entry => entry.source !== 'sale-deduction' && entry.source !== 'purchase');
 
+  // Group by normalized date (YYYY-MM-DD), ignoring time
   const groups = {};
   countEntries.forEach(entry => {
-    if (!groups[entry.date]) groups[entry.date] = [];
-    groups[entry.date].push(entry);
+    const dateKey = (entry.date || '').substring(0, 10);
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(entry);
+  });
+
+  // Deduplicate each group: keep last entry per item (most recent save wins)
+  Object.keys(groups).forEach(dateKey => {
+    const seen = new Map();
+    groups[dateKey].forEach(entry => {
+      const key = entry.itemId || entry.itemName;
+      seen.set(key, entry); // overwrite keeps the last occurrence
+    });
+    groups[dateKey] = Array.from(seen.values());
   });
 
   const chronoDates = Object.keys(groups).sort((a, b) => new Date(a) - new Date(b));
