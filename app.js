@@ -502,7 +502,6 @@ function renderInventoryHistory() {
     });
 
     summaryRow.querySelector('.delete-history-btn').addEventListener('click', () => {
-      if (!confirm(`Excluir a Contagem nº ${countNumbers[date]} (${date})?`)) return;
       deleteInventoryCount(date);
     });
 
@@ -511,11 +510,17 @@ function renderInventoryHistory() {
   });
 }
 
-function deleteInventoryCount(date) {
+async function deleteInventoryCount(date) {
+  if (!confirm(`Excluir a contagem de ${date}?`)) return;
+  const toDelete = state.inventoryHistory.filter(
+    entry => entry.date === date && entry.source !== 'sale-deduction'
+  );
   state.inventoryHistory = state.inventoryHistory.filter(
     entry => !(entry.date === date && entry.source !== 'sale-deduction')
   );
-  saveData(storageKeys.inventoryHistory, state.inventoryHistory);
+  await Promise.all(toDelete.map(entry =>
+    supabaseClient.from('inventario_historico').delete().eq('id', entry.id)
+  ));
   renderAll();
 }
 
