@@ -2128,17 +2128,61 @@ function renderPlanejamento() {
     return;
   }
 
-  // Latest inventory count — read-only, comes from Contagem de estoque
-  // Uses >= so that when two counts share the same date, the last inserted wins
+  // Collect all manual count dates to populate the reference date picker
+  const countDates = new Set();
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+    if (entry.type !== 'ingredient') return;
+    const d = (entry.date || '').substring(0, 10);
+    if (d) countDates.add(d);
+  });
+  const sortedDates = Array.from(countDates).sort();
+  const latestDate = sortedDates[sortedDates.length - 1] || null;
+
+  // Auto-populate reference date picker with most recent count date if not set
+  const refDateEl = document.getElementById('planInvRefDate');
+  if (refDateEl && !refDateEl.value && latestDate) {
+    refDateEl.value = latestDate;
+  }
+  const refDate = refDateEl?.value || latestDate || null;
+
+  // Show info about which inventory is being used
+  const refInfoEl = document.getElementById('planInvRefInfo');
+  if (refInfoEl) {
+    if (refDate) {
+      const countForDate = state.inventoryHistory.filter(e =>
+        (e.date || '').substring(0, 10) === refDate &&
+        e.source !== 'sale-deduction' && e.source !== 'purchase' && e.type === 'ingredient'
+      ).length;
+      const [y, m, d] = refDate.split('-');
+      refInfoEl.textContent = countForDate > 0
+        ? `✓ ${countForDate} insumo(s) em ${d}/${m}/${y}`
+        : `⚠ Nenhum item encontrado para ${d}/${m}/${y}`;
+      refInfoEl.style.color = countForDate > 0 ? 'var(--success, #2d7a46)' : 'var(--danger, #CC1515)';
+    } else {
+      refInfoEl.textContent = '⚠ Nenhuma contagem encontrada';
+      refInfoEl.style.color = 'var(--danger, #CC1515)';
+    }
+  }
+
+  // Build saldo inicial from the selected reference date
   const latestCount = {};
   state.inventoryHistory.forEach(entry => {
     if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
     if (entry.type !== 'ingredient') return;
     const n = entry.itemName;
     const entryDate = (entry.date || '').substring(0, 10);
-    const existingDate = (latestCount[n]?.date || '').substring(0, 10);
-    if (!latestCount[n] || entryDate >= existingDate) {
-      latestCount[n] = { quantity: entry.quantity, date: entryDate };
+    if (refDate) {
+      // Use only entries from the specific reference date
+      if (entryDate === refDate) {
+        latestCount[n] = { quantity: entry.quantity, date: entryDate };
+      }
+    } else {
+      // Fallback: latest per ingredient
+      const existingDate = (latestCount[n]?.date || '').substring(0, 10);
+      if (!latestCount[n] || entryDate >= existingDate) {
+        latestCount[n] = { quantity: entry.quantity, date: entryDate };
+      }
     }
   });
 
@@ -2167,6 +2211,9 @@ function renderPlanejamento() {
 }
 
 function calcularPlanejamento() {
+  // Re-render saldo inicial rows using the currently selected reference date before calculating
+  renderPlanejamento();
+
   const dateFrom = document.getElementById('planDateFrom')?.value;
   const dateTo   = document.getElementById('planDateTo')?.value;
   if (!dateFrom || !dateTo) { alert('Selecione o período de análise.'); return; }
@@ -2413,6 +2460,8 @@ async function initialize() {
     initCostYearSelectors();
     const calcPlanBtn = document.getElementById('calcPlanBtn');
     if (calcPlanBtn) calcPlanBtn.addEventListener('click', calcularPlanejamento);
+    const planInvRefDate = document.getElementById('planInvRefDate');
+    if (planInvRefDate) planInvRefDate.addEventListener('change', renderPlanejamento);
     document.querySelectorAll('.plan-period-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const range = btn.dataset.period === 'month' ? getPlanMonthRange() : getPlanWeekRange();

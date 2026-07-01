@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
 </head>
 <body>
 
@@ -715,7 +715,18 @@
       <div class="list-card">
         <h3>Período de Análise</h3>
         <p class="plan-hint">Saldo inicial (último inventário) + compras no período − consumo pelas vendas (fichas técnicas) = demanda de compra.</p>
-        <div class="form-grid" style="max-width:480px">
+
+        <div class="plan-inv-ref-row">
+          <div>
+            <label for="planInvRefDate">Inventário de referência <span class="field-hint">(saldo inicial)</span></label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="planInvRefDate" style="max-width:180px" />
+              <span id="planInvRefInfo" class="plan-ref-info"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="max-width:480px;margin-top:14px">
           <div>
             <label for="planDateFrom">De</label>
             <input type="date" id="planDateFrom" />
@@ -766,7 +777,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=12" defer></script>
+  <script src="app.js?v=13" defer></script>
 </body>
 </html>
 
