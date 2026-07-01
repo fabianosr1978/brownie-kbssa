@@ -511,16 +511,54 @@ function renderInventoryHistory() {
 }
 
 async function deleteInventoryCount(date) {
-  if (!confirm(`Excluir a contagem de ${date}?`)) return;
-  const toDelete = state.inventoryHistory.filter(
-    entry => entry.date === date && entry.source !== 'sale-deduction'
-  );
-  state.inventoryHistory = state.inventoryHistory.filter(
-    entry => !(entry.date === date && entry.source !== 'sale-deduction')
-  );
-  await Promise.all(toDelete.map(entry =>
-    supabaseClient.from('inventario_historico').delete().eq('id', entry.id)
-  ));
+  if (!confirm(`Excluir a contagem de ${date}?\n\nEsta ação não pode ser desfeita.`)) return;
+
+  const dateStr = (date || '').substring(0, 10);
+
+  // Coletar IDs válidos das entradas de contagem (não sale-deduction/purchase)
+  const toDelete = state.inventoryHistory.filter(entry => {
+    const d = (entry.date || '').substring(0, 10);
+    return d === dateStr && entry.source !== 'sale-deduction' && entry.source !== 'purchase';
+  });
+
+  const ids = toDelete.map(e => e.id).filter(Boolean);
+
+  let deleteError = null;
+  if (ids.length > 0) {
+    // Deletar pelo array de IDs
+    const { error } = await supabaseClient
+      .from('inventario_historico')
+      .delete()
+      .in('id', ids);
+    deleteError = error;
+  }
+
+  if (!deleteError && ids.length === 0) {
+    // Fallback: deletar por data diretamente
+    const nextDay = new Date(dateStr);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().substring(0, 10);
+    const { error } = await supabaseClient
+      .from('inventario_historico')
+      .delete()
+      .gte('date', dateStr)
+      .lt('date', nextDayStr)
+      .neq('source', 'sale-deduction')
+      .neq('source', 'purchase');
+    deleteError = error;
+  }
+
+  if (deleteError) {
+    console.error('Erro ao excluir contagem:', deleteError);
+    alert('Erro ao excluir: ' + deleteError.message);
+    return;
+  }
+
+  // Atualizar estado local
+  state.inventoryHistory = state.inventoryHistory.filter(entry => {
+    const d = (entry.date || '').substring(0, 10);
+    return !(d === dateStr && entry.source !== 'sale-deduction' && entry.source !== 'purchase');
+  });
   renderAll();
 }
 
