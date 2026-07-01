@@ -1797,9 +1797,24 @@ async function addCost(e) {
   await saveCostToDb(cost);
   elements.costForm.reset();
   elements.costId.value = '';
+  document.querySelector('#costForm .btn-primary').textContent = 'Lançar custo';
   initCostYearSelectors();
   renderCosts();
   renderDRE();
+}
+
+function editCost(id) {
+  const c = state.costs.find(c => c.id === id);
+  if (!c) return;
+  elements.costId.value       = c.id;
+  elements.costName.value     = c.name;
+  elements.costCategory.value = c.category;
+  elements.costValue.value    = c.value;
+  elements.costMonth.value    = c.month;
+  elements.costYear.value     = c.year;
+  document.querySelector('#costForm .btn-primary').textContent = 'Salvar alteração';
+  elements.costForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  elements.costName.focus();
 }
 
 async function deleteCost(id) {
@@ -1839,7 +1854,10 @@ function renderCosts() {
         <td>${c.name}</td>
         <td><span class="cost-badge cost-badge-${c.category}">${COST_LABELS[c.category] || c.category}</span></td>
         <td>${formatMoney(c.value)}</td>
-        <td><button class="btn-secondary" onclick="deleteCost('${c.id}')">Excluir</button></td>
+        <td>
+          <button class="btn-secondary" onclick="editCost('${c.id}')">Editar</button>
+          <button class="btn-secondary" onclick="deleteCost('${c.id}')">Excluir</button>
+        </td>
       </tr>
     `).join('');
 }
