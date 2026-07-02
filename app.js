@@ -168,6 +168,7 @@ const state = {
   clients: [],
   costs: [],
   planMode: 'real',
+  planoWeekStart: null,
 };
 
 let currentProductEditId = null;
@@ -2358,9 +2359,40 @@ function calcularPlanejamentoPorPlano(dateFrom, dateTo) {
   }
 }
 
+// ── PLANO DE VENDA ──────────────────────────────────────────
+
+function getCurrentMonday() {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon = new Date(today);
+  mon.setDate(today.getDate() + diff);
+  return mon.toISOString().substring(0, 10);
+}
+
+function addWeeks(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n * 7);
+  return d.toISOString().substring(0, 10);
+}
+
+function formatPlanoWeekLabel(mondayStr) {
+  const mon = new Date(mondayStr + 'T00:00:00');
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  return `${fmt(mon)} a ${fmt(sun)}/${sun.getFullYear()}`;
+}
+
 function renderPlanoVenda() {
+  if (!state.planoWeekStart) state.planoWeekStart = getCurrentMonday();
+
+  const labelEl = document.getElementById('planoWeekLabel');
+  if (labelEl) labelEl.textContent = formatPlanoWeekLabel(state.planoWeekStart);
+
   const tbody = document.querySelector('#planoVendaTable tbody');
   if (!tbody) return;
+
   const vendaProducts = state.products.filter(p => p.type === 'venda');
   if (vendaProducts.length === 0) {
     tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">Nenhum produto de venda cadastrado.</td></tr>';
@@ -2380,24 +2412,119 @@ function renderPlanoVenda() {
     `;
     tbody.appendChild(tr);
   });
+
+  // Populate inventory reference for the plano section
+  const countDates = new Set();
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+    if (entry.type !== 'ingredient') return;
+    const d = (entry.date || '').substring(0, 10);
+    if (d) countDates.add(d);
+  });
+  const latestDate = Array.from(countDates).sort().pop() || null;
+  const refDateEl = document.getElementById('planoInvRefDate');
+  if (refDateEl && !refDateEl.value && latestDate) refDateEl.value = latestDate;
+  const refDate = refDateEl?.value || latestDate;
+  const refInfoEl = document.getElementById('planoInvRefInfo');
+  if (refInfoEl && refDate) {
+    const cnt = state.inventoryHistory.filter(e =>
+      (e.date||'').substring(0,10) === refDate && e.source !== 'sale-deduction' && e.source !== 'purchase' && e.type === 'ingredient'
+    ).length;
+    const [y,m,d] = refDate.split('-');
+    refInfoEl.textContent = cnt > 0 ? `✓ ${cnt} insumo(s) em ${d}/${m}/${y}` : `⚠ Nenhum item em ${d}/${m}/${y}`;
+    refInfoEl.style.color = cnt > 0 ? 'var(--success,#2d7a46)' : 'var(--accent-red,#CC1515)';
+  }
 }
 
 async function savePlanoVenda() {
   const rows = document.querySelectorAll('#planoVendaTable tbody tr[data-product-id]');
   const updates = [];
   rows.forEach(row => {
-    const productId = row.dataset.productId;
-    const input = row.querySelector('.plano-goal-input');
-    const goal  = input ? (parseFloat(input.value) || null) : null;
-    const product = state.products.find(p => p.id === productId);
-    if (product) {
-      product.weeklyGoal = goal;
-      updates.push(saveProductToDb(product));
-    }
+    const product = state.products.find(p => p.id === row.dataset.productId);
+    const goal = parseFloat(row.querySelector('.plano-goal-input')?.value) || null;
+    if (product) { product.weeklyGoal = goal; updates.push(saveProductToDb(product)); }
   });
   await Promise.all(updates);
   const btn = document.getElementById('savePlanoVendaBtn');
-  if (btn) { btn.textContent = '✓ Plano salvo!'; setTimeout(() => { btn.textContent = 'Salvar Plano'; }, 2000); }
+  if (btn) { btn.textContent = '✓ Salvo!'; setTimeout(() => { btn.textContent = 'Salvar Plano'; }, 2000); }
+}
+
+function calcularNecessidadePlano() {
+  const refDate = document.getElementById('planoInvRefDate')?.value || null;
+
+  // Saldo atual do inventário
+  const saldo = {};
+  state.inventoryHistory.forEach(entry => {
+    if (entry.source === 'sale-deduction' || entry.source === 'purchase') return;
+    if (entry.type !== 'ingredient') return;
+    const d = (entry.date || '').substring(0, 10);
+    const n = entry.itemName;
+    if (refDate) {
+      if (d === refDate) saldo[n] = entry.quantity;
+    } else {
+      if (!saldo[n] || d >= (saldo.__dates?.[n] || '')) {
+        saldo[n] = entry.quantity;
+        saldo.__dates = saldo.__dates || {};
+        saldo.__dates[n] = d;
+      }
+    }
+  });
+
+  // Consumo previsto com base no plano
+  const consumo = {};
+  document.querySelectorAll('#planoVendaTable tbody tr[data-product-id]').forEach(row => {
+    const qty = parseFloat(row.querySelector('.plano-goal-input')?.value) || 0;
+    if (!qty) return;
+    const sp = state.products.find(p => p.id === row.dataset.productId);
+    if (!sp?.recipe?.ingredients?.length || !sp.recipe.yieldUnits) return;
+    sp.recipe.ingredients.forEach(ing => {
+      const c = (ing.recipeQty / sp.recipe.yieldUnits) * qty;
+      consumo[ing.name] = (consumo[ing.name] || 0) + c;
+    });
+  });
+
+  // Renderizar resultado
+  const tbody = document.querySelector('#planoResultTable tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  let totalCost = 0, itemsToBuy = 0;
+
+  state.products.filter(p => p.type === 'insumo').forEach(product => {
+    const c = consumo[product.name] || 0;
+    if (c === 0) return;
+    const s = saldo[product.name] || 0;
+    const necessidade = Math.max(0, c - s);
+    const unitCost = product.packageQty ? product.unitPrice / product.packageQty : 0;
+    const costEst = necessidade * unitCost;
+    if (necessidade > 0) { totalCost += costEst; itemsToBuy++; }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${product.name}</td>
+      <td>${Math.round(c)}</td>
+      <td>${Math.round(s)}</td>
+      <td>${necessidade > 0
+        ? `<strong style="color:var(--accent-red)">${Math.ceil(necessidade)}</strong>`
+        : '<span style="color:var(--success,#2d7a46)">OK</span>'}</td>
+      <td>${product.unit || '—'}</td>
+      <td>${necessidade > 0 && unitCost > 0 ? formatMoney(costEst) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (tbody.children.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Nenhum consumo calculado — verifique se os produtos têm ficha técnica e quantidade planejada.</td></tr>';
+  }
+
+  const summaryEl = document.getElementById('planoSummaryText');
+  if (summaryEl) {
+    summaryEl.style.display = '';
+    summaryEl.className = 'plan-summary ' + (itemsToBuy === 0 ? 'plan-summary-ok' : 'plan-summary-warn');
+    summaryEl.textContent = itemsToBuy === 0
+      ? '✓ Estoque suficiente para o plano desta semana!'
+      : `${itemsToBuy} insumo(s) a comprar. Custo estimado: ${formatMoney(totalCost)}`;
+  }
 }
 
 function showLogin() {
@@ -2639,6 +2766,20 @@ async function initialize() {
     });
     const savePlanoBtn = document.getElementById('savePlanoVendaBtn');
     if (savePlanoBtn) savePlanoBtn.addEventListener('click', savePlanoVenda);
+    document.getElementById('planoPrevWeek')?.addEventListener('click', () => {
+      state.planoWeekStart = addWeeks(state.planoWeekStart || getCurrentMonday(), -1);
+      renderPlanoVenda();
+    });
+    document.getElementById('planoNextWeek')?.addEventListener('click', () => {
+      state.planoWeekStart = addWeeks(state.planoWeekStart || getCurrentMonday(), 1);
+      renderPlanoVenda();
+    });
+    document.getElementById('planoThisWeek')?.addEventListener('click', () => {
+      state.planoWeekStart = getCurrentMonday();
+      renderPlanoVenda();
+    });
+    document.getElementById('planoInvRefDate')?.addEventListener('change', renderPlanoVenda);
+    document.getElementById('calcPlanoBtn')?.addEventListener('click', calcularNecessidadePlano);
     document.querySelectorAll('.plan-period-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const range = btn.dataset.period === 'month' ? getPlanMonthRange() : getPlanWeekRange();

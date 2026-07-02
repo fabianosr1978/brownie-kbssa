@@ -1379,8 +1379,27 @@ tbody tr:hover { background: #fff8e6; }
   color: var(--text);
 }
 
+.plano-week-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.plano-week-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 190px;
+  text-align: center;
+  padding: 4px 12px;
+  background: var(--accent-yellow-light, #fffbe6);
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+}
+
 .plano-goal-input {
-  width: 100px;
+  width: 110px;
   padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
 </head>
 <body>
 
@@ -718,15 +718,25 @@
     <section id="planoVenda" class="card-section">
       <h2>Plano de Venda</h2>
 
+      <!-- Bloco 1: plano por semana -->
       <div class="list-card">
-        <h3>Meta Semanal por Produto</h3>
-        <p class="plan-hint">Defina a quantidade semanal planejada para cada produto de venda. Esses valores serão usados no Planejamento de Compras (modo Plano de Venda) para calcular a necessidade de insumos.</p>
+        <h3>Plano Semanal</h3>
+
+        <div class="plano-week-nav">
+          <button type="button" id="planoPrevWeek" class="btn-secondary">&#8592; Anterior</button>
+          <span id="planoWeekLabel" class="plano-week-label">—</span>
+          <button type="button" id="planoNextWeek" class="btn-secondary">Próxima &#8594;</button>
+        </div>
+        <div style="margin-bottom:16px">
+          <button type="button" id="planoThisWeek" class="btn-secondary" style="font-size:0.82rem;padding:4px 12px">Esta semana</button>
+        </div>
+
         <div style="overflow-x:auto">
           <table id="planoVendaTable">
             <thead>
               <tr>
                 <th>Produto</th>
-                <th>Meta Semanal (unid.)</th>
+                <th>Qtd. planejada (unid.)</th>
                 <th>Ficha Técnica</th>
               </tr>
             </thead>
@@ -737,6 +747,42 @@
         </div>
         <div style="margin-top:16px">
           <button type="button" id="savePlanoVendaBtn" class="btn-primary">Salvar Plano</button>
+        </div>
+      </div>
+
+      <!-- Bloco 2: necessidade de compras -->
+      <div class="list-card">
+        <h3>Necessidade de Compras</h3>
+        <p class="plan-hint">Com base no plano da semana e no inventário atual, calcula o que precisa ser comprado para cada insumo.</p>
+
+        <div class="plan-inv-ref-row">
+          <label for="planoInvRefDate">Inventário de referência <span class="field-hint">(saldo atual)</span></label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="planoInvRefDate" style="max-width:180px" />
+            <span id="planoInvRefInfo" class="plan-ref-info"></span>
+          </div>
+        </div>
+
+        <button type="button" id="calcPlanoBtn" class="btn-primary" style="margin-bottom:16px">Calcular necessidade</button>
+
+        <p id="planoSummaryText" class="plan-summary" style="display:none"></p>
+
+        <div style="overflow-x:auto">
+          <table id="planoResultTable">
+            <thead>
+              <tr>
+                <th>Insumo</th>
+                <th>Consumo (Plano)</th>
+                <th>Saldo Atual</th>
+                <th>A Comprar</th>
+                <th>Unidade</th>
+                <th>Custo Est.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Clique em "Calcular necessidade" para ver a demanda.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -816,7 +862,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=16" defer></script>
+  <script src="app.js?v=17" defer></script>
 </body>
 </html>
 
