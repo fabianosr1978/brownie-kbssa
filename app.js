@@ -94,7 +94,12 @@ async function loadSales() {
 }
 async function saveSaleToDb(s) {
   const { error } = await supabaseClient.from('vendas').upsert({ id: s.id, date: s.date, product_id: s.productId, client: s.client, quantity: s.quantity, unit_price: s.unitPrice, total: s.total });
-  if (error) console.error('Erro salvar venda:', error);
+  if (error) {
+    console.error('Erro salvar venda:', error);
+    alert('⚠️ ERRO: A venda não foi salva no banco de dados!\n\nMotivo: ' + error.message + '\n\nRelance a venda.');
+    return false;
+  }
+  return true;
 }
 async function deleteSaleFromDb(id) {
   const { error } = await supabaseClient.from('vendas').delete().eq('id', id);
@@ -1556,13 +1561,16 @@ async function addSale(event) {
   if (currentSaleEditId) {
     const idx = state.sales.findIndex(s => s.id === currentSaleEditId);
     if (idx >= 0) {
-      state.sales[idx] = { id: currentSaleEditId, date, client, productId, quantity, unitPrice, total };
-      await saveSaleToDb(state.sales[idx]);
+      const updated = { id: currentSaleEditId, date, client, productId, quantity, unitPrice, total };
+      const ok = await saveSaleToDb(updated);
+      if (ok) state.sales[idx] = updated;
+      else return;
     }
   } else {
     const sale = { id: crypto.randomUUID(), date, client, productId, quantity, unitPrice, total };
+    const ok = await saveSaleToDb(sale);
+    if (!ok) return;
     state.sales.push(sale);
-    await saveSaleToDb(sale);
   }
 
   resetSaleForm();
