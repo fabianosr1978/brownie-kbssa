@@ -2451,6 +2451,31 @@ function exportPDF(mode) {
 
 let appInitialized = false;
 
+async function refreshData() {
+  const btn = document.getElementById('refreshDataBtn');
+  if (btn) { btn.textContent = '↻ Atualizando...'; btn.disabled = true; }
+  try {
+    [
+      state.products,
+      state.purchases,
+      state.sales,
+      state.clients,
+      state.costs,
+      state.inventoryHistory,
+    ] = await Promise.all([
+      loadProducts(),
+      loadPurchases(),
+      loadSales(),
+      loadClients(),
+      loadCostsFromDb(),
+      loadInventoryHistory(),
+    ]);
+    renderAll();
+  } finally {
+    if (btn) { btn.textContent = '↻ Atualizar dados'; btn.disabled = false; }
+  }
+}
+
 async function initialize() {
   [
     state.products,
@@ -2628,6 +2653,7 @@ async function initialize() {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+  document.getElementById('refreshDataBtn').addEventListener('click', refreshData);
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     showApp();
