@@ -881,6 +881,36 @@ function drawPurchasesByMonthChart() {
   });
 }
 
+function drawPurchasesByBuyerChart() {
+  const year = getDashYear();
+  const month = getDashMonth();
+  const byBuyer = {};
+  state.purchases.forEach(p => {
+    if (parseInt(p.date.substring(0,4)) !== year) return;
+    if (month && parseInt(p.date.substring(5,7)) !== month) return;
+    const buyer = p.buyer?.trim() || 'Sem comprador';
+    byBuyer[buyer] = (byBuyer[buyer] || 0) + p.quantity * p.unitValue;
+  });
+  const buyers = Object.keys(byBuyer).sort((a,b) => byBuyer[b] - byBuyer[a]);
+  const colors = ['#8b3d1c','#e07b39','#FFD900','#2e6db0','#3d8a5e','#b02e6d','#6db02e'];
+  destroyChart('purchasesByBuyer');
+  const ctx = document.getElementById('purchasesByBuyerChart');
+  if (!ctx) return;
+  chartInstances['purchasesByBuyer'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: buyers,
+      datasets: [{ label: 'Total (R$)', data: buyers.map(b => byBuyer[b]),
+        backgroundColor: buyers.map((_,i) => colors[i % colors.length]), borderRadius: 6 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${formatMoney(c.raw)}` } } },
+      scales: { y: { ticks: { callback: v => formatMoney(v) } } }
+    }
+  });
+}
+
 function drawPurchasesByWeekChart() {
   const year = getDashYear();
   const weekData = {};
@@ -1170,6 +1200,7 @@ function renderDashboard() {
     drawDreByMonthChart();
     drawPurchasesByMonthChart();
     drawPurchasesByWeekChart();
+    drawPurchasesByBuyerChart();
     drawInventoryByMonthChart();
   });
 }
@@ -2704,7 +2735,7 @@ async function initialize() {
     window.addEventListener('resize', () => {
       if (document.getElementById('dashboard')?.classList.contains('active')) {
         drawSalesByMonthChart(); drawSalesByWeekChart(); drawSalesByProductChart(); drawSalesByClientChart();
-        drawDreByMonthChart(); drawPurchasesByMonthChart(); drawPurchasesByWeekChart(); drawInventoryByMonthChart();
+        drawDreByMonthChart(); drawPurchasesByMonthChart(); drawPurchasesByWeekChart(); drawPurchasesByBuyerChart(); drawInventoryByMonthChart();
       }
     });
     if (elements.loadBaseRecipeBtn) {
