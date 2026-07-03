@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=17" />
+  <link rel="stylesheet" href="styles.css?v=18" />
 </head>
 <body>
 
@@ -287,6 +287,10 @@
           <label for="purchaseLocation">Local da compra</label>
           <input id="purchaseLocation" name="purchaseLocation" type="text" />
         </div>
+        <div>
+          <label for="purchaseBuyer">Comprador</label>
+          <input id="purchaseBuyer" name="purchaseBuyer" type="text" placeholder="Nome do comprador" />
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary">Registrar compra</button>
         </div>
@@ -298,6 +302,7 @@
           <thead>
             <tr>
               <th>Data</th>
+              <th>Comprador</th>
               <th>Insumo</th>
               <th>Qtd</th>
               <th>Valor unit.</th>
@@ -862,7 +867,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=17" defer></script>
+  <script src="app.js?v=18" defer></script>
 </body>
 </html>
 

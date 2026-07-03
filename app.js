@@ -75,10 +75,10 @@ async function deleteProductFromDb(id) {
 async function loadPurchases() {
   const { data, error } = await supabaseClient.from('compras').select('*').order('date', { ascending: false });
   if (error) { console.error('Erro compras:', error); return []; }
-  return (data || []).map(r => ({ id: r.id, date: r.date, productId: r.product_id, quantity: r.quantity, unitValue: r.unit_value, location: r.location }));
+  return (data || []).map(r => ({ id: r.id, date: r.date, productId: r.product_id, quantity: r.quantity, unitValue: r.unit_value, location: r.location, buyer: r.comprador || '' }));
 }
 async function savePurchaseToDb(p) {
-  const { error } = await supabaseClient.from('compras').upsert({ id: p.id, date: p.date, product_id: p.productId, quantity: p.quantity, unit_value: p.unitValue, location: p.location });
+  const { error } = await supabaseClient.from('compras').upsert({ id: p.id, date: p.date, product_id: p.productId, quantity: p.quantity, unit_value: p.unitValue, location: p.location, comprador: p.buyer || null });
   if (error) console.error('Erro salvar compra:', error);
 }
 async function deletePurchaseFromDb(id) {
@@ -369,11 +369,12 @@ function renderPurchases() {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${purchase.date}</td>
+      <td>${purchase.buyer || '<span style="color:var(--muted)">—</span>'}</td>
       <td>${product ? product.name : 'Produto removido'}</td>
       <td>${purchase.quantity}</td>
       <td>${formatMoney(purchase.unitValue)}</td>
       <td>${formatMoney(purchase.quantity * purchase.unitValue)}</td>
-      <td>${purchase.location}</td>
+      <td>${purchase.location || '—'}</td>
       <td><button type="button" class="btn-secondary" data-purchase-id="${purchase.id}">Excluir</button></td>
     `;
     row.querySelector('button').addEventListener('click', () => deletePurchase(purchase.id));
@@ -1536,10 +1537,11 @@ async function addPurchase(event) {
   const quantity = Number(document.getElementById('purchaseQuantity').value);
   const unitValue = Number(document.getElementById('purchaseUnitValue').value);
   const location = document.getElementById('purchaseLocation').value.trim();
+  const buyer    = document.getElementById('purchaseBuyer').value.trim();
 
   if (!date || !productId || !quantity || !unitValue) return;
 
-  const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location };
+  const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location, buyer };
   state.purchases.push(purchase);
   await savePurchaseToDb(purchase);
   event.target.reset();
