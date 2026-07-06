@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Brownie do KBBSA - Sistema de Controle</title>
-  <link rel="stylesheet" href="styles.css?v=19" />
+  <link rel="stylesheet" href="styles.css?v=20" />
 </head>
 <body>
 
@@ -228,13 +228,35 @@
                 <p><strong>Total de custo:</strong> <span id="recipeTotalCost">R$ 0,00</span></p>
                 <p><strong>Custo unitário por unidade:</strong> <span id="recipeUnitCost">R$ 0,00</span></p>
               </div>
+              <div class="precificacao-sugerida">
+                <div class="precif-title">Precificação sugerida</div>
+                <div class="precif-row">
+                  <label for="recipeMargemDesejada">Margem desejada (%)</label>
+                  <input id="recipeMargemDesejada" type="number" min="1" max="99" step="1" placeholder="Ex: 60" class="precif-margem-input" />
+                  <span class="precif-formula">Preço = Custo ÷ (1 − margem)</span>
+                </div>
+                <div class="precif-result-row">
+                  <div class="precif-result-item">
+                    <span class="precif-label">Preço sugerido</span>
+                    <span id="recipePrecoSugerido" class="precif-valor">—</span>
+                  </div>
+                  <div class="precif-result-item" id="recipePrecoAtualRow" style="display:none">
+                    <span class="precif-label">Preço atual</span>
+                    <span id="recipePrecoAtual" class="precif-valor-atual">—</span>
+                  </div>
+                  <span id="recipePrecoComparacao" class="precif-comparacao"></span>
+                </div>
+              </div>
               <div class="list-card">
                 <h3>Fichas técnicas cadastradas</h3>
                 <table id="recipeProductsTable">
                   <thead>
                     <tr>
                       <th>Produto</th>
-                      <th>Custo unitário</th>
+                      <th>Custo unit.</th>
+                      <th>Margem</th>
+                      <th>Preço sugerido</th>
+                      <th>Preço atual</th>
                       <th>Ações</th>
                     </tr>
                   </thead>
@@ -874,7 +896,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=19" defer></script>
+  <script src="app.js?v=20" defer></script>
 </body>
 </html>
 

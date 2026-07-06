@@ -340,14 +340,27 @@ function renderRecipeProducts() {
     if (product.recipe) {
       const row = document.createElement('tr');
       const unitCost = product.recipe.unitCost || 0;
+      const margem = product.recipe.margemDesejada || 0;
+      const precoSugerido = (margem > 0 && margem < 100 && unitCost > 0) ? unitCost / (1 - margem / 100) : null;
+      const precoAtual = product.unitPrice || 0;
+      let comparacao = '';
+      if (precoSugerido && precoAtual > 0) {
+        if (precoAtual >= precoSugerido) {
+          comparacao = `<span class="badge-ok" title="Preço acima do sugerido">✓</span>`;
+        } else {
+          comparacao = `<span class="precif-badge-baixo" title="Preço abaixo do sugerido">⚠</span>`;
+        }
+      }
       row.innerHTML = `
         <td>${product.name}</td>
         <td>${formatMoney(unitCost)}</td>
+        <td>${margem > 0 ? margem + '%' : '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${precoSugerido ? formatMoney(precoSugerido) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${precoAtual > 0 ? formatMoney(precoAtual) : '<span style="color:var(--muted)">—</span>'} ${comparacao}</td>
         <td><button type="button" class="btn-secondary edit-recipe-btn" data-id="${product.id}">Editar</button></td>
       `;
       row.querySelector('.edit-recipe-btn').addEventListener('click', () => {
         populateRecipeForm(product);
-        // scroll to form
         document.getElementById('fichaPanel').scrollIntoView({ behavior: 'smooth' });
       });
       elements.recipeProductsTable.appendChild(row);
@@ -1420,6 +1433,46 @@ function updateRecipeTotals() {
 
   elements.recipeTotalCost.textContent = formatMoney(totalCost);
   elements.recipeUnitCost.textContent = formatMoney(unitCost);
+
+  const margemVal = Number(document.getElementById('recipeMargemDesejada')?.value) || 0;
+  const precoSugeridoEl = document.getElementById('recipePrecoSugerido');
+  let precoSugerido = null;
+  if (precoSugeridoEl) {
+    if (margemVal > 0 && margemVal < 100 && unitCost > 0) {
+      precoSugerido = unitCost / (1 - margemVal / 100);
+      precoSugeridoEl.textContent = formatMoney(precoSugerido);
+    } else {
+      precoSugeridoEl.textContent = '—';
+    }
+  }
+
+  const productId = elements.recipeProduct.value;
+  const product = state.products.find(p => p.id === productId);
+  const precoAtualRow = document.getElementById('recipePrecoAtualRow');
+  const precoAtualEl = document.getElementById('recipePrecoAtual');
+  const comparacaoEl = document.getElementById('recipePrecoComparacao');
+  if (product && product.unitPrice > 0 && precoAtualRow) {
+    precoAtualRow.style.display = '';
+    if (precoAtualEl) precoAtualEl.textContent = formatMoney(product.unitPrice);
+    if (comparacaoEl) {
+      if (precoSugerido) {
+        if (product.unitPrice >= precoSugerido) {
+          comparacaoEl.textContent = '✓ Acima do sugerido';
+          comparacaoEl.className = 'precif-comparacao precif-ok';
+        } else {
+          const diff = precoSugerido - product.unitPrice;
+          comparacaoEl.textContent = `⚠ Abaixo do sugerido (falta ${formatMoney(diff)})`;
+          comparacaoEl.className = 'precif-comparacao precif-baixo';
+        }
+      } else {
+        comparacaoEl.textContent = '';
+        comparacaoEl.className = 'precif-comparacao';
+      }
+    }
+  } else if (precoAtualRow) {
+    precoAtualRow.style.display = 'none';
+    if (comparacaoEl) { comparacaoEl.textContent = ''; comparacaoEl.className = 'precif-comparacao'; }
+  }
 }
 
 function populateRecipeForm(product) {
@@ -1430,6 +1483,8 @@ function populateRecipeForm(product) {
   document.getElementById('recipeTotalWeight').value = product.recipe?.totalWeight || '';
   document.getElementById('recipeYield').value = product.recipe?.yieldUnits || '';
   document.getElementById('recipePrepTime').value = product.recipe?.prepTime || '';
+  const margemInput = document.getElementById('recipeMargemDesejada');
+  if (margemInput) margemInput.value = product.recipe?.margemDesejada || '';
 
   const recipeButton = elements.recipeForm.querySelector('.btn-primary');
   if (recipeButton) {
@@ -1541,6 +1596,7 @@ async function addRecipeProduct(event) {
 
   const totalCost = ingredients.reduce((sum, item) => sum + item.cost, 0);
   const unitCost = yieldUnits ? totalCost / yieldUnits : 0;
+  const margemDesejada = Number(document.getElementById('recipeMargemDesejada')?.value) || 0;
 
   product.recipe = {
     totalWeight,
@@ -1549,6 +1605,7 @@ async function addRecipeProduct(event) {
     totalCost: Number(totalCost.toFixed(2)),
     unitCost: Number(unitCost.toFixed(2)),
     ingredients,
+    ...(margemDesejada > 0 && margemDesejada < 100 ? { margemDesejada } : {}),
   };
 
   await saveProductToDb(product);
@@ -2665,6 +2722,7 @@ async function initialize() {
     elements.productForm.addEventListener('submit', addProduct);
     elements.recipeForm.addEventListener('submit', addRecipeProduct);
     elements.recipeProduct.addEventListener('change', handleRecipeProductChange);
+    document.getElementById('recipeMargemDesejada')?.addEventListener('input', updateRecipeTotals);
     elements.purchaseForm.addEventListener('submit', addPurchase);
     elements.purchaseProduct.addEventListener('change', () => {
       const product = state.products.find(p => p.id === elements.purchaseProduct.value);

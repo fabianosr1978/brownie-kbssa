@@ -562,6 +562,94 @@ button, input, select { font: inherit; }
 }
 .recipe-summary p { margin: 0; font-weight: 600; font-size: 0.9rem; }
 
+.precificacao-sugerida {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fff8e1;
+  border: 1px solid #FFD900;
+  border-radius: 10px;
+}
+.precif-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #8b3d1c;
+  margin-bottom: 10px;
+}
+.precif-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.precif-row label {
+  font-size: 0.83rem;
+  color: #555;
+  margin: 0;
+  min-width: 140px;
+}
+.precif-formula {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.precif-margem-input {
+  width: 72px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.precif-result-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.precif-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.precif-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.precif-valor {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.precif-valor-atual {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #555;
+}
+.precif-comparacao {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  align-self: center;
+}
+.precif-comparacao.precif-ok {
+  background: #e8f5e9;
+  color: #2e7d52;
+}
+.precif-comparacao.precif-baixo {
+  background: #fdecea;
+  color: #CC1515;
+}
+.precif-badge-baixo {
+  color: #CC1515;
+  font-size: 0.9rem;
+  cursor: default;
+}
+
 /* Tabelas */
 .list-card { overflow-x: auto; margin-bottom: 16px; }
 .list-card h3 { font-size: 0.95rem; margin-bottom: 12px; }
