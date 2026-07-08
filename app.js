@@ -174,6 +174,7 @@ const state = {
 let currentProductEditId = null;
 let currentRecipeProductId = null;
 let currentSaleEditId = null;
+let currentPurchaseEditId = null;
 
 const elements = {
   recipeForm: document.getElementById('recipeForm'),
@@ -388,11 +389,39 @@ function renderPurchases() {
       <td>${formatMoney(purchase.unitValue)}</td>
       <td>${formatMoney(purchase.quantity * purchase.unitValue)}</td>
       <td>${purchase.location || '—'}</td>
-      <td><button type="button" class="btn-secondary" data-purchase-id="${purchase.id}">Excluir</button></td>
+      <td>
+        <button type="button" class="btn-secondary edit-purchase-btn" data-purchase-id="${purchase.id}">Editar</button>
+        <button type="button" class="btn-secondary delete-purchase-btn" data-purchase-id="${purchase.id}">Excluir</button>
+      </td>
     `;
-    row.querySelector('button').addEventListener('click', () => deletePurchase(purchase.id));
+    row.querySelector('.edit-purchase-btn').addEventListener('click', () => startPurchaseEdit(purchase.id));
+    row.querySelector('.delete-purchase-btn').addEventListener('click', () => deletePurchase(purchase.id));
     elements.purchasesTable.appendChild(row);
   });
+}
+
+function startPurchaseEdit(id) {
+  const purchase = state.purchases.find(p => p.id === id);
+  if (!purchase) return;
+  currentPurchaseEditId = id;
+  document.getElementById('purchaseDate').value = purchase.date;
+  document.getElementById('purchaseProduct').value = purchase.productId;
+  document.getElementById('purchaseQuantity').value = purchase.quantity;
+  document.getElementById('purchaseUnitValue').value = purchase.unitValue;
+  document.getElementById('purchaseLocation').value = purchase.location || '';
+  document.getElementById('purchaseBuyer').value = purchase.buyer || '';
+  const totalEl = document.getElementById('purchaseTotalDisplay');
+  if (totalEl) totalEl.value = formatMoney(purchase.quantity * purchase.unitValue);
+  document.querySelector('#purchaseForm .btn-primary').textContent = 'Atualizar compra';
+  document.getElementById('compras').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetPurchaseForm() {
+  currentPurchaseEditId = null;
+  document.getElementById('purchaseForm').reset();
+  const totalEl = document.getElementById('purchaseTotalDisplay');
+  if (totalEl) totalEl.value = '';
+  document.querySelector('#purchaseForm .btn-primary').textContent = 'Registrar compra';
 }
 
 async function deletePurchase(id) {
@@ -1629,11 +1658,20 @@ async function addPurchase(event) {
 
   if (!date || !productId || !quantity || !unitValue) return;
 
-  const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location, buyer };
-  state.purchases.push(purchase);
-  await savePurchaseToDb(purchase);
-  event.target.reset();
-  document.getElementById('purchaseTotalDisplay').value = '';
+  if (currentPurchaseEditId) {
+    const idx = state.purchases.findIndex(p => p.id === currentPurchaseEditId);
+    if (idx >= 0) {
+      const updated = { id: currentPurchaseEditId, date, productId, quantity, unitValue, location, buyer };
+      await savePurchaseToDb(updated);
+      state.purchases[idx] = updated;
+    }
+  } else {
+    const purchase = { id: crypto.randomUUID(), date, productId, quantity, unitValue, location, buyer };
+    await savePurchaseToDb(purchase);
+    state.purchases.push(purchase);
+  }
+
+  resetPurchaseForm();
   renderAll();
 }
 
