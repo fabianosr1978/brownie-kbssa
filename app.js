@@ -2688,8 +2688,8 @@ async function handleLogout() {
 }
 
 function exportPDF(mode) {
-  const targetId = mode === 'dre' ? 'drePrintArea' : 'dashboard';
-  const orientation = mode === 'dre' ? 'portrait' : 'landscape';
+  const targetId = mode === 'dre' ? 'drePrintArea' : mode === 'compras' ? 'compras' : 'dashboard';
+  const orientation = mode === 'dre' ? 'portrait' : mode === 'compras' ? 'portrait' : 'landscape';
   const target = document.getElementById(targetId);
   if (!target) return;
 

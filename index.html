@@ -322,7 +322,10 @@
       </form>
 
       <div class="list-card">
-        <h3>Compras registradas</h3>
+        <div class="list-card-header">
+          <h3>Compras registradas</h3>
+          <button type="button" class="btn-pdf" onclick="exportPDF('compras')">📄 Exportar Compras em PDF</button>
+        </div>
         <table id="purchasesTable">
           <thead>
             <tr>
